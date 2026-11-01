@@ -14,7 +14,7 @@ const wss = new WebSocketServer({ server });
 
 // Configuração
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = join(__dirname, 'data.json');
+const DATA_FILE = process.env.DATA_FILE || join(__dirname, 'data.json');
 
 // Estado da aplicação
 let appState = {
