@@ -1,0 +1,24 @@
+{
+  "name": "cifrahub-live",
+  "version": "1.0.0",
+  "description": "App de cifras musicais para shows ao vivo com sincronização WebSocket em tempo real",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "cifras",
+    "musica",
+    "websocket",
+    "palco",
+    "show"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0"
+  }
+}

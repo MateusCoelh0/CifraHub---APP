@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+
+# OS
+.DS_Store
+Thumbs.db
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Misc
+.DS_Store
+*.pem
+dist/
+build/
+temp/
+tmp/
+
+# Data
+data.json

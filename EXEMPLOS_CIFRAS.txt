@@ -1,0 +1,187 @@
+// Exemplos de Cifras para usar no CifraHub
+// Copie e cole essas cifras na área "Cifra" ao criar uma música
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 1: "Imagine" - John Lennon
+// ═══════════════════════════════════════════════════════════
+
+[C]Imagine all the people
+[F]Living life in peace
+[C]You, you may say
+[G]I'm a dreamer
+[C]But I'm not the only one
+
+[F]I hope someday you'll join us
+[C]And the world will be as one
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 2: "Wonderwall" - Oasis
+// ═══════════════════════════════════════════════════════════
+
+[Em7]Today is gonna be the day
+[Dsus2]That they're gonna throw it back to you
+[Cadd9]By now you should've somehow
+[Dsus2]Realized what you gotta do
+
+[Em7]I don't believe that anybody
+[Dsus2]Feels the way I do about you now
+
+[Cadd9]And all the roads we have to walk
+[Dsus2]Are winding
+[Em7]And all the lights that lead us there
+[Dsus2]Are blinding
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 3: "Hallelujah" - Leonard Cohen (Transposição Fácil)
+// ═══════════════════════════════════════════════════════════
+
+[C]I heard there was a secret chord
+[C]That David played and it pleased the Lord
+[Am]But you don't really care for music, do you?
+
+[C]It goes like this, the fourth, the fifth
+[Am]The minor fall, the major lift
+[G]The baffled king composing Hallelujah
+
+[C]Hallelujah, Hallelujah
+[Am]Hallelujah, Hallelujah
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 4: "Blowin' in the Wind" - Bob Dylan
+// ═══════════════════════════════════════════════════════════
+
+[G]How many roads must a man walk down
+[D]Before you call him a man?
+[Am]How many seas must a white dove sail
+[D]Before she sleeps in the sand?
+
+[G]Yes, and how many times must the cannonballs fly
+[D]Before they're forever banned?
+[Am]The answer, my friend, is blowin' in the wind
+[D]The answer is blowin' in the wind
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 5: "Someone Like You" - Adele (Tom: A)
+// ═══════════════════════════════════════════════════════════
+
+[A]I heard that you're settled down
+[E]That you found a girl and you're married now
+[A]I heard that your dreams came true
+[E]Guess she gave you things I didn't give to you
+
+[D]Old friend, why are you so shy?
+[A]Ain't like you to hold back or hide away
+[D]I hate to turn up out of the blue uninvited
+[E]But I couldn't stay away
+
+[A]I couldn't stay away, I had to call
+[E]No, you know what, forget it
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 6: "Sweet Home Chicago" - Blues Clássico
+// ═══════════════════════════════════════════════════════════
+
+[E]Oh, baby, don't you want to go
+[E]Back to that same old place
+[A]Sweet Home Chicago
+
+[E]Oh baby, don't you want to go
+[B]Back to that same old place
+[A]Sweet Home Chicago
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 7: "Stairway to Heaven" - Led Zeppelin (Progressão complexa)
+// ═══════════════════════════════════════════════════════════
+
+[Em]There's a lady who's sure all that glitters is gold
+[G]And she's buying a stairway to heaven
+[Dsus2]When she gets there she knows, if the stores are all closed
+[A]With a word she can get what she came for
+
+[Dm]Oh oh oh oh, oh oh oh
+
+[Dm]And the forests will echo with laughter
+[Am]If there's a bustle in your hedgerow, don't be alarmed now
+[Dm]It's just a spring clean for the May Queen
+
+// ═══════════════════════════════════════════════════════════
+// EXEMPLO 8: "Nothing Else Matters" - Metallica (Tom: Em)
+// ═══════════════════════════════════════════════════════════
+
+[Em]So close, no matter how far
+[Em]Couldn't be much more from the heart
+[Em]Forever trusting who we are
+[Em]And nothing else matters
+
+[Am]Never opened myself this way
+[D]Life is ours, we live it our way
+[Am]All these words, I don't just say
+[D]And nothing else matters
+
+[G]Trust I seek and I find in you
+[D]Every day for us something new
+[A]Open mind for a different view
+[D]And nothing else matters
+
+// ═══════════════════════════════════════════════════════════
+// FORMATO: DICAS IMPORTANTES
+// ═══════════════════════════════════════════════════════════
+
+/*
+1. USE COLCHETES [ACORDE] IMEDIATAMENTE ANTES DA LETRA
+
+   Correto:  [C]Letra aqui [G]mais letra
+   Errado:   Letra aqui [C] [G] mais letra
+   Errado:   [C] [G] Letra aqui
+
+2. ACORDES SIMPLES (maioria dos casos)
+   [C] [D] [E] [F] [G] [A] [B]
+
+3. ACORDES MENORES
+   [Am] [Dm] [Em] [Gm] [Bm]
+
+4. COM SUSTENIDO (#)
+   [C#] [D#] [F#] [G#] [A#]
+
+5. COM BEMOL (b)
+   [Db] [Eb] [Gb] [Ab] [Bb]
+
+6. ACORDES ESTENDIDOS
+   [Cmaj7] [Dm9] [G7] [Am7] [Dsus2] [Cadd9]
+
+7. ACORDES COM BAIXO (cifra)
+   [C/E] [G/B] [Am/F]
+
+8. QUEBRA DE LINHAS = Nova linha de letra
+   Tudo vazio = paragem/pausa
+
+9. SUPORTE A TRANSPOSIÇÃO
+   - Transposição automática de todos os acordes
+   - Usa semitom conforme ajuste no app
+   - Mantém tipo do acorde (maior/menor/7/etc)
+
+10. USE MAIÚSCULAS nos acordes
+    [C] correto
+    [c] pode não funcionar
+*/
+
+// ═══════════════════════════════════════════════════════════
+// TESTE COM ESSA CIFRA SIMPLES PARA APRENDER:
+// ═══════════════════════════════════════════════════════════
+
+[G]Esta é uma
+[D]Cifra de exemplo
+[A]Para você aprender
+[D]O formato correto
+
+[G]Verso 1
+[C]Aqui vai o refrão
+[G]Mais uma vez
+
+[C]Verso 2
+[Am]Preparando o final
+[D]Muito legal!
+
+// ═══════════════════════════════════════════════════════════
+// Bom show! 🎸
+// ═══════════════════════════════════════════════════════════
