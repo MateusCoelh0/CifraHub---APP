@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CifraHub - Shows ao Vivo</title>
+  <title>CifraHub - Louvor & Adoração</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -12,74 +15,61 @@
     }
 
     :root {
-      --primary: #00ff41;
-      --accent: #ffa500;
-      --dark: #0a0e27;
-      --darker: #050710;
-      --text: #e0e0e0;
-      --border: #1a2540;
-      --success: #00dd33;
-      --warning: #ffaa00;
-    }
-
-    body.light-theme {
-      --primary: #0066cc;
-      --accent: #ff6600;
-      --dark: #f5f5f5;
-      --darker: #ffffff;
-      --text: #333333;
-      --border: #dddddd;
-    }
-
-    body.light-theme .sidebar,
-    body.light-theme .main-content,
-    body.light-theme .panel-right {
-      background: #f5f5f5;
-    }
-
-    body.light-theme .modal-content,
-    body.light-theme .toast {
-      background: #ffffff;
-      border: 2px solid #0066cc;
-    }
-
-    .theme-toggle {
-      position: fixed;
-      top: 15px;
-      right: 15px;
-      background: var(--primary);
-      border: none;
-      color: var(--darker);
-      padding: 8px 12px;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: bold;
-      z-index: 500;
-      transition: all 0.2s;
-    }
-
-    .theme-toggle:hover {
-      box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
-      transform: scale(1.05);
+      --gold: #b8860b;
+      --gold-light: #d4a017;
+      --gold-bright: #f0c040;
+      --gold-pale: #f5e6c8;
+      --gold-bg: rgba(184, 134, 11, 0.08);
+      --gold-bg-hover: rgba(184, 134, 11, 0.12);
+      --gold-border: rgba(184, 134, 11, 0.15);
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-muted: #86868b;
+      --bg-page: #f5f2ed;
+      --bg-glass: rgba(255, 255, 255, 0.65);
+      --bg-glass-strong: rgba(255, 255, 255, 0.82);
+      --bg-subtle: rgba(0, 0, 0, 0.02);
+      --bg-subtle-hover: rgba(0, 0, 0, 0.04);
+      --border-light: rgba(0, 0, 0, 0.06);
+      --border-glass: rgba(255, 255, 255, 0.5);
+      --shadow-sm: 0 2px 20px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.03);
+      --shadow-btn: 0 1px 2px rgba(0,0,0,0.04);
+      --chord-color: #996515;
+      --success: #34c759;
+      --danger: #ef4444;
     }
 
     body {
-      font-family: 'Courier New', monospace;
-      background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
-      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
       line-height: 1.6;
       overflow: hidden;
       height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Subtle warm gradient */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 10% 20%, rgba(212, 160, 23, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 80%, rgba(245, 230, 200, 0.2) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 248, 230, 0.15) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .container {
       display: grid;
-      grid-template-columns: 280px 1fr 320px;
+      grid-template-columns: 260px 1fr 280px;
       height: 100vh;
-      gap: 1px;
-      background: var(--border);
-      padding: 1px;
+      gap: 12px;
+      padding: 12px;
+      position: relative;
+      z-index: 1;
     }
 
     .container.stage-mode {
@@ -91,10 +81,6 @@
       display: none;
     }
 
-    .container.stage-mode .main-content {
-      background: var(--darker);
-    }
-
     .container.viewer-mode {
       grid-template-columns: 1fr;
     }
@@ -104,230 +90,194 @@
       display: none;
     }
 
-    .container.viewer-mode .main-content {
-      background: var(--darker);
-    }
-
-    .container.viewer-mode .header {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
     .container.viewer-mode .cifra-container {
       padding: 40px;
     }
 
-    .container.viewer-mode .cifra-text {
-      font-size: 32px;
-      line-height: 2.2;
+    .container.viewer-mode .cifra-sheet {
+      font-size: 26px;
+      line-height: 1.8;
+      padding: 40px;
     }
 
-    /* ═══════════════════════════ SIDEBAR ESQUERDA ═══════════════════════════ */
+    /* ═══════════════ GLASS ═══════════════ */
+    .glass {
+      background: var(--bg-glass);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid var(--border-glass);
+    }
+
+    .glass-strong {
+      background: var(--bg-glass-strong);
+      backdrop-filter: blur(30px) saturate(200%);
+      -webkit-backdrop-filter: blur(30px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    /* ═══════════════ SIDEBAR ═══════════════ */
     .sidebar {
-      background: var(--dark);
-      border-right: 2px solid var(--primary);
-      overflow-y: auto;
+      border-radius: 20px;
       display: flex;
       flex-direction: column;
-      padding: 15px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
 
     .logo {
+      padding: 20px 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: var(--primary);
-      text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
-      border-bottom: 2px solid var(--accent);
-      padding-bottom: 10px;
-      text-align: center;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(184, 134, 11, 0.25);
+    }
+
+    .logo-text {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.4px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-top: -1px;
     }
 
     .status-bar {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid var(--primary);
-      padding: 10px;
-      margin-bottom: 15px;
-      border-radius: 4px;
-      font-size: 12px;
+      margin: 0 14px 12px;
+      padding: 12px 14px;
+      background: var(--gold-bg);
+      border-radius: 14px;
+      border: 1px solid var(--gold-border);
     }
 
     .status-item {
       display: flex;
       justify-content: space-between;
-      margin: 5px 0;
+      align-items: center;
+      padding: 2px 0;
+      font-size: 12.5px;
     }
 
-    .status-label {
-      color: var(--accent);
-    }
+    .status-label { color: var(--text-muted); font-weight: 500; }
 
     .status-value {
-      color: var(--primary);
-      font-weight: bold;
+      color: var(--text-primary);
+      font-weight: 600;
     }
 
     .role-badge {
-      display: inline-block;
-      padding: 4px 8px;
       margin-top: 8px;
-      background: var(--primary);
-      color: var(--darker);
-      border-radius: 3px;
-      font-size: 11px;
-      font-weight: bold;
-      width: 100%;
+      padding: 7px 0;
+      background: linear-gradient(135deg, rgba(184,134,11,0.12), rgba(212,160,23,0.08));
+      border: 1px solid var(--gold-border);
+      border-radius: 10px;
       text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.2px;
+      display: none;
+      width: 100%;
     }
 
     .role-badge.host {
-      background: var(--accent);
+      background: linear-gradient(135deg, rgba(184,134,11,0.12), rgba(212,160,23,0.08));
+      color: var(--gold);
     }
 
     .section-title {
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: bold;
-      margin-top: 15px;
-      margin-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 5px;
+      font-size: 11px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      padding: 14px 18px 6px;
+      margin: 0;
+      border-bottom: none;
     }
 
-    .song-item {
-      background: rgba(0, 255, 65, 0.05);
-      border: 1px solid var(--border);
-      padding: 8px;
-      margin-bottom: 5px;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: all 0.2s;
-      font-size: 12px;
-    }
-
-    .song-item:hover {
-      background: rgba(0, 255, 65, 0.15);
-      border-color: var(--primary);
-    }
-
-    .song-item.active {
-      background: rgba(0, 255, 65, 0.25);
-      border-color: var(--primary);
-      box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
-    }
-
-    .song-title {
-      color: var(--primary);
-      font-weight: bold;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .song-artist {
-      color: var(--accent);
-      font-size: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .setlist-item {
-      background: rgba(255, 165, 0, 0.05);
-      border: 1px solid var(--border);
-      padding: 8px;
-      margin-bottom: 5px;
-      cursor: pointer;
-      border-radius: 3px;
-      transition: all 0.2s;
-      font-size: 12px;
-    }
-
-    .setlist-item:hover {
-      background: rgba(255, 165, 0, 0.15);
-      border-color: var(--accent);
-    }
-
-    .setlist-item.active {
-      background: rgba(255, 165, 0, 0.25);
-      border-color: var(--accent);
-      box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
-    }
-
-    .setlist-name {
-      color: var(--accent);
-      font-weight: bold;
-      font-size: 12px;
-    }
-
-    .setlist-count {
-      color: var(--text);
-      font-size: 10px;
-    }
-
-    /* 📂 Header da seção de músicas (com filtro de setlist) */
+    /* Songs header */
     .songs-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 6px;
-      margin-bottom: 8px;
+      padding: 0 18px 6px;
     }
 
     .songs-header-title {
-      color: var(--primary);
-      font-size: 12px;
-      font-weight: bold;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      text-transform: uppercase;
-      letter-spacing: 1px;
     }
 
     .songs-header-title.filtered {
-      color: var(--accent);
+      color: var(--gold);
     }
 
     .mini-btn {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 3px 6px;
-      border-radius: 3px;
+      padding: 4px 8px;
+      background: var(--gold-bg);
+      border: 1px solid var(--gold-border);
+      color: var(--gold);
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 10px;
-      font-weight: bold;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
       transition: all 0.15s;
     }
 
     .mini-btn:hover {
-      background: var(--primary);
-      color: var(--darker);
+      background: var(--gold);
+      color: white;
     }
 
     .mini-btn.accent {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(255, 165, 0, 0.1);
+      border-color: var(--gold-border);
+      color: var(--gold);
+      background: var(--gold-bg);
     }
 
     .mini-btn.accent:hover {
-      background: var(--accent);
-      color: var(--darker);
+      background: var(--gold);
+      color: white;
+    }
+
+    #songsList {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 10px;
     }
 
     .song-item-wrapper {
       display: flex;
       gap: 4px;
       align-items: stretch;
-      margin-bottom: 5px;
+      margin-bottom: 2px;
     }
 
     .song-item-wrapper .song-item {
@@ -335,171 +285,362 @@
       margin-bottom: 0;
     }
 
+    .song-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+    }
+
+    .song-item:hover {
+      background: var(--gold-bg);
+    }
+
+    .song-item.active {
+      background: var(--gold-bg-hover);
+      border-color: var(--gold-border);
+    }
+
+    .song-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .song-item.active .song-title {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .song-artist {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .song-item-remove {
-      background: rgba(255, 68, 68, 0.1);
-      border: 1px solid #ff4444;
-      color: #ff4444;
+      background: rgba(239, 68, 68, 0.06);
+      border: 1px solid rgba(239, 68, 68, 0.15);
+      color: var(--danger);
       padding: 0 8px;
-      border-radius: 3px;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
       font-weight: bold;
+      font-family: inherit;
       transition: all 0.15s;
     }
 
     .song-item-remove:hover {
-      background: #ff4444;
+      background: var(--danger);
       color: white;
     }
 
-    /* ═════════════════════════════ CONTEÚDO PRINCIPAL ═════════════════════════════ */
+    /* Setlists */
+    .setlist-section-wrap {
+      margin-top: auto;
+      border-top: 1px solid var(--border-light);
+      padding: 10px;
+    }
+
+    .setlist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 4px;
+      background: var(--bg-subtle);
+      border: 1px solid transparent;
+    }
+
+    .setlist-item:hover {
+      background: var(--gold-bg);
+    }
+
+    .setlist-item.active {
+      background: var(--gold-bg);
+      border-color: var(--gold-border);
+    }
+
+    .setlist-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .setlist-count {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════ MAIN CONTENT ═══════════════ */
     .main-content {
-      background: var(--darker);
-      border-right: 2px solid var(--primary);
       display: flex;
       flex-direction: column;
+      border-radius: 20px;
       overflow: hidden;
+      box-shadow: var(--shadow-sm);
     }
 
     .header {
-      background: rgba(0, 0, 0, 0.5);
-      border-bottom: 2px solid var(--primary);
-      padding: 15px;
+      padding: 18px 24px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-light);
+      background: transparent;
     }
 
-    .song-header {
-      flex: 1;
-    }
+    .song-header { flex: 1; }
 
     .song-title-main {
-      font-size: 28px;
-      color: var(--primary);
-      font-weight: bold;
-      text-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
-      margin-bottom: 5px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+      text-shadow: none;
+      margin-bottom: 4px;
     }
 
     .song-meta {
-      font-size: 12px;
-      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
     }
 
     .header-controls {
       display: flex;
-      gap: 10px;
+      gap: 6px;
     }
 
     .btn {
-      background: transparent;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 8px 12px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
       cursor: pointer;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      transition: all 0.2s;
-      font-weight: bold;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border: none;
+      background: var(--bg-subtle-hover);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-btn);
     }
 
     .btn:hover {
-      background: var(--primary);
-      color: var(--darker);
-      box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+      background: rgba(0,0,0,0.08);
     }
 
     .btn.accent {
-      border-color: var(--accent);
-      color: var(--accent);
+      background: var(--gold-bg);
+      color: var(--gold);
+      border: none;
     }
 
     .btn.accent:hover {
-      background: var(--accent);
-      color: var(--darker);
-      box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+      background: var(--gold-bg-hover);
+    }
+
+    .btn.accent.active {
+      background: var(--gold);
+      color: white;
     }
 
     .btn:disabled {
-      opacity: 0.5;
+      opacity: 0.4;
       cursor: not-allowed;
     }
 
     .btn:disabled:hover {
-      background: transparent;
-      box-shadow: none;
+      background: var(--bg-subtle-hover);
     }
 
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 14px rgba(184, 134, 11, 0.2);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(184, 134, 11, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .navbar {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .nav-item {
+      padding: 6px 10px;
+      background: var(--bg-subtle-hover);
+      border: none;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: inherit;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .nav-item:hover { color: var(--text-primary); background: rgba(0,0,0,0.06); }
+    .nav-item.active { background: var(--gold); color: white; }
+
+    /* ═══════════════ ÁREA DA CIFRA - ESTILO CIFRA CLUB ═══════════════ */
     .cifra-container {
       flex: 1;
       overflow-y: auto;
-      padding: 20px;
+      padding: 20px 24px;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
+      background: rgba(255, 255, 255, 0.4);
     }
 
-    .cifra-text {
+    .cifra-sheet {
+      font-family: 'SF Mono', 'Roboto Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
       font-size: 16px;
-      color: var(--text);
+      line-height: 1.55;
+      color: #18181b;
       white-space: pre-wrap;
       word-wrap: break-word;
-      line-height: 1.8;
-      font-family: 'Courier New', monospace;
+      tab-size: 4;
+      background: #ffffff;
+      padding: 32px 38px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      min-height: 100%;
+      margin: 0;
+      user-select: text;
     }
 
     .cifra-chord {
-      color: var(--primary);
-      font-weight: bold;
+      color: #b45309; /* Tom dourado escuro / âmbar de altíssimo contraste */
+      font-weight: 700;
+      display: inline-block;
+      letter-spacing: 0.01em;
+      transition: color 0.15s;
     }
 
-    /* 🎤 MODO CANTOR — só letra, fonte grande, alto contraste */
-    .cifra-text.singer-mode {
-      font-family: Georgia, 'Times New Roman', serif;
-      line-height: 2;
-      letter-spacing: 0.3px;
-      padding: 10px 0;
+    .cifra-chord:hover {
+      color: #d97706;
     }
 
-    .cifra-text.singer-mode .cifra-chord {
+    .cifra-section {
+      color: #71717a;
+      font-weight: 700;
+      font-size: 0.95em;
+      display: inline-block;
+      margin-top: 10px;
+      margin-bottom: 2px;
+    }
+
+    .cifra-section:first-child {
+      margin-top: 0;
+    }
+
+    .cifra-info {
+      color: #52525b;
+      font-weight: 600;
+      font-size: 0.95em;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .cifra-empty-line {
+      display: block;
+      height: 1.1em;
+    }
+
+    .cifra-lyric-line {
+      display: block;
+      color: #18181b;
+      font-size: 1em;
+      line-height: 1.6;
+    }
+
+    /* 🎤 MODO CANTOR (Foco apenas na letra) */
+    .cifra-sheet.singer-mode {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 28px;
+      line-height: 2.2;
+      color: #18181b;
+      font-weight: 500;
+      white-space: pre-line;
+      padding: 40px 48px;
+    }
+
+    .cifra-sheet.singer-mode .cifra-chord {
       display: none !important;
     }
 
-    body.light-theme .cifra-text {
-      color: #222;
+    .cifra-sheet.singer-mode .cifra-info {
+      display: none !important;
     }
 
-    body.light-theme .cifra-chord {
-      color: #0066cc !important;
-      background: rgba(0, 102, 204, 0.15) !important;
+    .cifra-sheet.singer-mode .cifra-section {
+      color: #b45309;
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 18px;
+      margin-bottom: 8px;
     }
 
-    /* ═════════════════════════════ PAINEL DIREITA ═════════════════════════════ */
+    /* ═══════════════ RIGHT PANEL ═══════════════ */
     .panel-right {
-      background: var(--dark);
-      border-left: 2px solid var(--accent);
+      border-radius: 20px;
       overflow-y: auto;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      padding: 15px;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
     }
 
     .control-group {
-      background: rgba(255, 165, 0, 0.05);
-      border: 1px solid var(--border);
-      padding: 12px;
-      margin-bottom: 12px;
-      border-radius: 4px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: var(--bg-subtle);
+      border: none;
+      margin-bottom: 0;
     }
 
     .control-title {
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: bold;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       margin-bottom: 8px;
     }
 
@@ -507,106 +648,117 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       font-size: 12px;
     }
 
-    .control-row:last-child {
-      margin-bottom: 0;
-    }
+    .control-row:last-child { margin-bottom: 0; }
 
     .control-label {
-      color: var(--text);
+      color: var(--text-secondary);
       flex: 1;
     }
 
     .control-value {
-      color: var(--primary);
-      font-weight: bold;
+      padding: 2px 10px;
+      background: var(--gold-bg);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
       min-width: 50px;
-      text-align: right;
+      text-align: center;
     }
 
+    /* Apple-style slider */
     .slider-input {
       width: 100%;
       height: 6px;
-      border-radius: 3px;
-      background: rgba(0, 255, 65, 0.2);
+      border-radius: 99px;
+      background: rgba(0,0,0,0.06);
       outline: none;
       -webkit-appearance: none;
       appearance: none;
-      margin-top: 5px;
+      margin: 6px 0;
     }
 
     .slider-input::-webkit-slider-thumb {
       -webkit-appearance: none;
-      appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      background: var(--primary);
+      background: white;
       cursor: pointer;
-      box-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04);
+      transition: box-shadow 0.15s;
+    }
+
+    .slider-input::-webkit-slider-thumb:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.06);
     }
 
     .slider-input::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      background: var(--primary);
+      background: white;
       cursor: pointer;
       border: none;
-      box-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.04);
     }
 
     .select-input {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 5px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
+      background: white;
+      border: 1px solid var(--border-light);
+      color: var(--text-primary);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .select-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
     }
 
     .select-input option {
-      background: var(--dark);
-      color: var(--primary);
+      background: white;
+      color: var(--text-primary);
     }
 
     .toggle-btn {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid var(--primary);
-      color: var(--primary);
+      background: var(--bg-subtle-hover);
+      border: none;
+      color: var(--text-primary);
       padding: 5px 10px;
-      border-radius: 3px;
+      border-radius: 8px;
       cursor: pointer;
-      font-family: 'Courier New', monospace;
-      font-size: 11px;
-      transition: all 0.2s;
+      font-family: inherit;
+      font-size: 12px;
+      transition: all 0.15s;
       width: 100%;
     }
 
     .toggle-btn:hover {
-      background: var(--primary);
-      color: var(--darker);
+      background: rgba(0,0,0,0.08);
     }
 
     .toggle-btn.active {
-      background: var(--primary);
-      color: var(--darker);
-      box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+      background: var(--gold);
+      color: white;
     }
 
-    /* ═════════════════════════════ MODAL ═════════════════════════════ */
+    /* ═══════════════ MODALS ═══════════════ */
     .modal {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -617,70 +769,75 @@
     }
 
     .modal-content {
-      background: var(--dark);
-      border: 2px solid var(--primary);
-      border-radius: 4px;
-      padding: 20px;
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
       max-width: 600px;
       width: 90%;
       max-height: 80vh;
       overflow-y: auto;
-      box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.04);
+      border: none;
     }
 
     .modal-title {
       font-size: 20px;
-      color: var(--primary);
-      margin-bottom: 15px;
-      text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      text-shadow: none;
     }
 
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .form-label {
       display: block;
-      color: var(--accent);
+      color: var(--text-secondary);
       font-size: 12px;
       margin-bottom: 5px;
-      font-weight: bold;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
     }
 
     .form-input,
     .form-textarea {
       width: 100%;
-      background: rgba(0, 255, 65, 0.05);
-      border: 1px solid var(--primary);
-      color: var(--text);
-      padding: 8px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
+      background: #fafaf8;
+      border: 1px solid var(--border-light);
+      color: var(--text-primary);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.15s;
     }
 
     .form-input::placeholder,
     .form-textarea::placeholder {
-      color: rgba(224, 224, 224, 0.5);
+      color: var(--text-muted);
     }
 
     .form-input:focus,
     .form-textarea:focus {
       outline: none;
-      background: rgba(0, 255, 65, 0.1);
-      box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
+      background: white;
     }
 
     .form-textarea {
       resize: vertical;
       min-height: 150px;
+      font-family: 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px;
     }
 
     .modal-buttons {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       margin-top: 20px;
     }
 
@@ -688,50 +845,90 @@
       flex: 1;
     }
 
-    /* ═════════════════════════════ NOTIFICAÇÕES ═════════════════════════════ */
+    .modal-buttons .btn-save {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 4px 14px rgba(184, 134, 11, 0.2);
+    }
+
+    .modal-buttons .btn-save:hover {
+      box-shadow: 0 6px 20px rgba(184, 134, 11, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* ═══════════════ TOAST ═══════════════ */
     .toast {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--dark);
-      border: 2px solid var(--primary);
-      color: var(--primary);
-      padding: 15px 20px;
-      border-radius: 4px;
-      font-size: 12px;
+      bottom: 24px;
+      right: 24px;
+      background: white;
+      border: 1px solid var(--border-light);
+      color: var(--text-primary);
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 500;
       z-index: 2000;
       animation: slideIn 0.3s ease;
-      box-shadow: 0 0 15px rgba(0, 255, 65, 0.4);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     }
 
     @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-      }
-      to {
-        transform: translateX(0);
-      }
+      from { transform: translateX(120px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
 
-    /* ═════════════════════════════ SCROLLBAR ═════════════════════════════ */
-    ::-webkit-scrollbar {
-      width: 8px;
+    /* ═══════════════ SCROLLBAR ═══════════════ */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+
+    /* ═══════════════ STATUS DOT ═══════════════ */
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52,199,89,0.4); }
+      50% { box-shadow: 0 0 0 4px rgba(52,199,89,0); }
     }
 
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 255, 65, 0.05);
+    .dot-online {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      margin-right: 4px;
+      animation: pulse-green 2s infinite;
     }
 
-    ::-webkit-scrollbar-thumb {
-      background: var(--primary);
-      border-radius: 4px;
+    /* ═══════════════ THEME TOGGLE ═══════════════ */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      border: 1px solid var(--border-light);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      z-index: 500;
+      transition: all 0.15s;
+      box-shadow: var(--shadow-btn);
+      display: none; /* hidden — single theme */
     }
 
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--accent);
-    }
-
-    /* ═════════════════════════════ RESPONSIVO ═════════════════════════════ */
+    /* ═══════════════ RESPONSIVE ═══════════════ */
     @media (max-width: 1200px) {
       .container {
         grid-template-columns: 1fr 250px;
@@ -744,6 +941,8 @@
     @media (max-width: 768px) {
       .container {
         grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 8px;
       }
       .panel-right {
         display: none;
@@ -751,120 +950,103 @@
       .header {
         flex-direction: column;
         gap: 10px;
+        padding: 14px;
       }
-    }
-
-    .navbar {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
-
-    .nav-item {
-      background: rgba(0, 255, 65, 0.1);
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 6px 10px;
-      cursor: pointer;
-      border-radius: 3px;
-      font-size: 11px;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .nav-item:hover {
-      background: var(--primary);
-      color: var(--darker);
-    }
-
-    .nav-item.active {
-      background: var(--primary);
-      color: var(--darker);
+      .cifra-container {
+        padding: 16px;
+      }
     }
   </style>
 </head>
 <body>
-  <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">🌙 ESCURO</button>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Alternar tema">☀️ CLARO</button>
+
   <div class="container" id="container">
     <!-- SIDEBAR ESQUERDA -->
-    <div class="sidebar">
-      <div class="logo">🎸 CIFRAHUB</div>
+    <div class="sidebar glass">
+      <div class="logo">
+        <div class="logo-icon">✝</div>
+        <div>
+          <div class="logo-text">CifraHub</div>
+          <div class="logo-sub">Louvor & Adoração</div>
+        </div>
+      </div>
 
       <div class="status-bar">
         <div class="status-item">
-          <span class="status-label">STATUS:</span>
-          <span class="status-value" id="connectionStatus">...</span>
+          <span class="status-label">Status</span>
+          <span class="status-value" id="connectionStatus"><span class="dot-online"></span> Online</span>
         </div>
         <div class="status-item">
-          <span class="status-label">CLIENTES:</span>
+          <span class="status-label">Músicos</span>
           <span class="status-value" id="clientsCount">0</span>
         </div>
         <div class="status-item">
-          <span class="status-label">ROLE:</span>
+          <span class="status-label">Função</span>
           <span class="status-value" id="roleDisplay">-</span>
         </div>
-        <div id="hostBadge" class="role-badge host" style="display: none;">🎸 HOST</div>
-        <div id="viewerBadge" class="role-badge" style="display: none;">👁️ VISUALIZADOR</div>
+        <div id="hostBadge" class="role-badge host" style="display: none;">🎸 Líder de Louvor</div>
+        <div id="viewerBadge" class="role-badge" style="display: none;">👁️ Visualizador</div>
       </div>
 
       <div>
         <div class="songs-header">
-          <div class="songs-header-title" id="songsHeaderTitle">📚 REPERTÓRIO</div>
+          <div class="songs-header-title" id="songsHeaderTitle">📚 Repertório</div>
           <button class="mini-btn accent" id="addToSetlistBtn" onclick="showAddToSetlistModal()" style="display:none;" title="Adicionar músicas à setlist">+</button>
           <button class="mini-btn" id="clearSetlistFilterBtn" onclick="clearSetlistFilter()" style="display:none;" title="Ver todas as músicas">✕</button>
         </div>
         <div id="songsList"></div>
       </div>
 
-      <div style="margin-top: auto;">
-        <div class="section-title">📋 Setlists</div>
+      <div class="setlist-section-wrap">
+        <div class="section-title" style="padding-left: 4px;">📋 Setlists</div>
         <div id="setlistsList"></div>
-        <button class="btn" onclick="showCreateSetlistModal()" style="width: 100%; margin-top: 8px;">+ NOVA SETLIST</button>
+        <button class="btn" onclick="showCreateSetlistModal()" style="width: 100%; margin-top: 8px; justify-content: center; border: 1.5px dashed var(--border-light); background: transparent; color: var(--text-muted);">+ Nova Setlist</button>
       </div>
     </div>
 
     <!-- CONTEÚDO PRINCIPAL -->
-    <div class="main-content">
+    <div class="main-content glass-strong">
       <div class="header">
         <div class="song-header">
           <div class="song-title-main" id="currentSongTitle">Selecione uma música</div>
           <div class="song-meta" id="currentSongMeta">Toque para começar</div>
         </div>
         <div class="header-controls">
-          <button class="btn" id="prevBtn" onclick="previousSong()" disabled>◄ ANTERIOR</button>
-          <button class="btn" id="nextBtn" onclick="nextSong()" disabled>PRÓXIMO ►</button>
-          <button class="btn accent" id="singerModeBtn" onclick="toggleSingerMode()" title="Modo Cantor - só letra">🎤 CANTOR</button>
-          <button class="btn accent" id="viewerModeBtn" onclick="toggleViewerMode()" style="display: none;">👁️ VER APENAS</button>
-          <button class="btn accent" id="normalModeBtn" onclick="toggleViewerMode()" style="display: none;">🎛️ CONTROLES</button>
-          <button class="btn accent" id="stageModeBtn" onclick="toggleStageMode()">⚫ PALCO</button>
+          <button class="btn" id="prevBtn" onclick="previousSong()" disabled>◀ Anterior</button>
+          <button class="btn" id="nextBtn" onclick="nextSong()" disabled>Próxima ▶</button>
+          <button class="btn accent" id="singerModeBtn" onclick="toggleSingerMode()" title="Modo Cantor - só letra">🎤 Cantor</button>
+          <button class="btn accent" id="viewerModeBtn" onclick="toggleViewerMode()" style="display: none;">👁️ Ver apenas</button>
+          <button class="btn accent" id="normalModeBtn" onclick="toggleViewerMode()" style="display: none;">🎛️ Controles</button>
+          <button class="btn-primary" id="stageModeBtn" onclick="toggleStageMode()">⬤ Palco</button>
         </div>
       </div>
 
       <div class="cifra-container" id="cifraContainer">
-        <div class="cifra-text" id="cifraDisplay">Bem-vindo ao CifraHub!</div>
+        <pre class="cifra-sheet" id="cifraDisplay">Bem-vindo ao CifraHub!</pre>
       </div>
     </div>
 
     <!-- PAINEL DIREITA -->
-    <div class="panel-right">
-      <!-- CONTROLE DE TRANSPOSIÇÃO -->
+    <div class="panel-right glass">
+      <!-- TRANSPOSIÇÃO -->
       <div class="control-group">
-        <div class="control-title">🎹 TRANSPOSIÇÃO</div>
+        <div class="control-title">🎹 Transposição</div>
         <div class="control-row">
           <span class="control-label">Semitom</span>
           <span class="control-value" id="transposeValue">0</span>
         </div>
         <input type="range" class="slider-input" id="transposeSlider" min="-12" max="12" value="0" onchange="updateTranspose()" oninput="updateTranspose()">
-        <div style="display: flex; gap: 5px; margin-top: 8px;">
-          <button class="btn" style="flex: 1; padding: 5px;" onclick="transposeBy(-1)">- 1</button>
-          <button class="btn" style="flex: 1; padding: 5px;" onclick="transposeReset()">0</button>
-          <button class="btn" style="flex: 1; padding: 5px;" onclick="transposeBy(1)">+ 1</button>
+        <div style="display: flex; gap: 6px; margin-top: 6px;">
+          <button class="btn" style="flex: 1; padding: 7px; justify-content: center;" onclick="transposeBy(-1)">− 1</button>
+          <button class="btn" style="flex: 1; padding: 7px; justify-content: center;" onclick="transposeReset()">0</button>
+          <button class="btn" style="flex: 1; padding: 7px; justify-content: center;" onclick="transposeBy(1)">+ 1</button>
         </div>
       </div>
 
       <!-- CAPOTRASTE -->
       <div class="control-group">
-        <div class="control-title">🎸 CAPOTRASTE</div>
+        <div class="control-title">🎸 Capotraste</div>
         <div class="control-row">
           <span class="control-label">Traste</span>
           <span class="control-value" id="capoValue">0</span>
@@ -874,7 +1056,7 @@
 
       <!-- AUTO-SCROLL -->
       <div class="control-group">
-        <div class="control-title">📜 AUTO-SCROLL</div>
+        <div class="control-title">📜 Auto-Scroll</div>
         <div class="control-row">
           <span class="control-label">Velocidade</span>
           <span class="control-value" id="scrollSpeed">0</span>
@@ -882,9 +1064,9 @@
         <input type="range" class="slider-input" id="scrollSlider" min="0" max="100" value="0" onchange="updateAutoScroll()" oninput="updateAutoScroll()">
       </div>
 
-      <!-- 🔤 TAMANHO DA FONTE (todos podem ajustar) -->
+      <!-- TAMANHO DA FONTE -->
       <div class="control-group">
-        <div class="control-title">🔤 TAMANHO DA FONTE</div>
+        <div class="control-title">🔤 Tamanho da Fonte</div>
         <div class="control-row">
           <span class="control-label" id="fontSizeLabel">Normal</span>
           <span class="control-value" id="fontSizeValue">16px</span>
@@ -893,15 +1075,15 @@
       </div>
 
       <!-- AÇÕES HOST -->
-      <div class="control-group" id="hostControlsGroup" style="display: none;">
-        <div class="control-title">⚙️ CONTROLES (HOST)</div>
-        <button class="btn" style="width: 100%; margin-bottom: 8px;" onclick="showCreateSongModal()">+ NOVA MÚSICA</button>
-        <button class="btn accent" style="width: 100%; margin-bottom: 8px;" onclick="showEditSongModal()">✎ EDITAR MÚSICA</button>
-        <button class="btn" style="width: 100%; border-color: #ff4444; color: #ff4444;" onclick="deleteCurrentSong()">🗑️ REMOVER MÚSICA</button>
+      <div class="control-group" id="hostControlsGroup" style="display: none; margin-top: auto; border-top: 1px solid var(--border-light); padding-top: 14px; background: transparent;">
+        <div class="control-title">⚙️ Controles do Host</div>
+        <button class="btn-primary" style="width: 100%; margin-bottom: 6px; justify-content: center;" onclick="showCreateSongModal()">✝ Nova Música</button>
+        <button class="btn" style="width: 100%; margin-bottom: 6px; justify-content: center;" onclick="showEditSongModal()">✎ Editar Música</button>
+        <button class="btn" style="width: 100%; justify-content: center; color: var(--danger); background: rgba(239,68,68,0.06);" onclick="deleteCurrentSong()">🗑 Remover Música</button>
       </div>
 
-      <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid var(--border);">
-        <button class="btn" style="width: 100%; font-size: 11px;" onclick="showSettingsModal()">⚙️ CONFIGURAÇÕES</button>
+      <div style="margin-top: auto; padding-top: 10px;">
+        <button class="btn" style="width: 100%; justify-content: center; color: var(--text-muted); background: transparent;" onclick="showSettingsModal()">⚙ Configurações</button>
       </div>
     </div>
   </div>
@@ -910,7 +1092,7 @@
   <!-- Modal: Criar Música -->
   <div class="modal" id="createSongModal">
     <div class="modal-content">
-      <div class="modal-title">➕ NOVA MÚSICA</div>
+      <div class="modal-title">✝ Nova Música</div>
       <form onsubmit="createSong(event)">
         <div class="form-group">
           <label class="form-label">Título</label>
@@ -934,18 +1116,17 @@
           <input type="number" class="form-input" id="newSongTempo" placeholder="120" value="120">
         </div>
         <div class="form-group">
-          <label class="form-label">CIFRA</label>
+          <label class="form-label">Cifra</label>
           <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;">
-            <button type="button" class="mini-btn accent" onclick="document.getElementById('txtImportInput').click()">📁 IMPORTAR .TXT</button>
-            <button type="button" class="mini-btn" onclick="convertTxtInTextarea('newSongCifra')">🔄 CONVERTER TEXTO COLADO</button>
-            <span style="font-size: 10px; color: var(--text); opacity: 0.7;">Formato: [C]letra OU acordes acima da letra</span>
+            <button type="button" class="mini-btn accent" onclick="document.getElementById('txtImportInput').click()">📁 Importar .txt</button>
+            <span style="font-size: 11px; color: var(--text-muted); align-self: center;">Aceita cifras copiadas direto do Cifra Club ou no formato [C]Letra</span>
           </div>
           <input type="file" id="txtImportInput" accept=".txt,.cho,.crd,.pro" style="display:none;" onchange="handleTxtImport(event)">
-          <textarea class="form-textarea" id="newSongCifra" placeholder="[C]Letra aqui...&#10;&#10;Ou cole com acordes em cima:&#10;C       G       Am      F&#10;Imagine all the people" required></textarea>
+          <textarea class="form-textarea" id="newSongCifra" placeholder="Cole sua cifra direto do Cifra Club ou no formato [C]Letra...&#10;&#10;Exemplo Cifra Club:&#10;G                    D/F#&#10;Seu sangue sobre mim, Senhor&#10;Em                 C&#10;A Tua graça me alcançou" required></textarea>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="btn" onclick="closeModal('createSongModal')">CANCELAR</button>
-          <button type="submit" class="btn" style="background: var(--primary); color: var(--darker);">CRIAR</button>
+          <button type="button" class="btn" style="justify-content: center;" onclick="closeModal('createSongModal')">Cancelar</button>
+          <button type="submit" class="btn-save">Criar Música</button>
         </div>
       </form>
     </div>
@@ -954,7 +1135,7 @@
   <!-- Modal: Editar Música -->
   <div class="modal" id="editSongModal">
     <div class="modal-content">
-      <div class="modal-title">✎ EDITAR MÚSICA</div>
+      <div class="modal-title">✎ Editar Música</div>
       <form onsubmit="updateSong(event)">
         <div class="form-group">
           <label class="form-label">Título</label>
@@ -978,15 +1159,12 @@
           <input type="number" class="form-input" id="editSongTempo">
         </div>
         <div class="form-group">
-          <label class="form-label">CIFRA</label>
-          <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-            <button type="button" class="mini-btn" onclick="convertTxtInTextarea('editSongCifra')">🔄 CONVERTER TEXTO COLADO</button>
-          </div>
-          <textarea class="form-textarea" id="editSongCifra" required></textarea>
+          <label class="form-label">Cifra</label>
+          <textarea class="form-textarea" id="editSongCifra" placeholder="Cole sua cifra direto do Cifra Club ou no formato [C]Letra..." required></textarea>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="btn" onclick="closeModal('editSongModal')">CANCELAR</button>
-          <button type="submit" class="btn" style="background: var(--primary); color: var(--darker);">SALVAR</button>
+          <button type="button" class="btn" style="justify-content: center;" onclick="closeModal('editSongModal')">Cancelar</button>
+          <button type="submit" class="btn-save">Salvar</button>
         </div>
       </form>
     </div>
@@ -995,15 +1173,15 @@
   <!-- Modal: Adicionar Músicas à Setlist -->
   <div class="modal" id="addToSetlistModal">
     <div class="modal-content">
-      <div class="modal-title">➕ ADICIONAR MÚSICAS À SETLIST</div>
-      <div id="addToSetlistInfo" style="color: var(--accent); font-size: 12px; margin-bottom: 12px;"></div>
+      <div class="modal-title">➕ Adicionar Músicas à Setlist</div>
+      <div id="addToSetlistInfo" style="color: var(--gold); font-size: 13px; margin-bottom: 12px; font-weight: 500;"></div>
       <div class="form-group">
         <label class="form-label">Músicas disponíveis no repertório</label>
-        <div id="addToSetlistCheckbox" style="max-height: 360px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 3px;"></div>
+        <div id="addToSetlistCheckbox" style="max-height: 360px; overflow-y: auto; border: 1px solid var(--border-light); padding: 12px; border-radius: 12px; background: #fafaf8;"></div>
       </div>
       <div class="modal-buttons">
-        <button type="button" class="btn" onclick="closeModal('addToSetlistModal')">CANCELAR</button>
-        <button type="button" class="btn" style="background: var(--primary); color: var(--darker);" onclick="confirmAddToSetlist()">ADICIONAR SELECIONADAS</button>
+        <button type="button" class="btn" style="justify-content: center;" onclick="closeModal('addToSetlistModal')">Cancelar</button>
+        <button type="button" class="btn-save" onclick="confirmAddToSetlist()">Adicionar Selecionadas</button>
       </div>
     </div>
   </div>
@@ -1011,20 +1189,19 @@
   <!-- Modal: Criar Setlist -->
   <div class="modal" id="createSetlistModal">
     <div class="modal-content">
-      <div class="modal-title">📋 NOVA SETLIST</div>
+      <div class="modal-title">📋 Nova Setlist</div>
       <form onsubmit="createSetlist(event)">
         <div class="form-group">
           <label class="form-label">Nome da Setlist</label>
-          <input type="text" class="form-input" id="newSetlistName" placeholder="Ex: Setlist 1 - Abertura" required>
+          <input type="text" class="form-input" id="newSetlistName" placeholder="Ex: Culto Domingo — Abertura" required>
         </div>
         <div class="form-group">
           <label class="form-label">Selecione as Músicas</label>
-          <div id="setlistSongsCheckbox" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 3px;">
-          </div>
+          <div id="setlistSongsCheckbox" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-light); padding: 12px; border-radius: 12px; background: #fafaf8;"></div>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="btn" onclick="closeModal('createSetlistModal')">CANCELAR</button>
-          <button type="submit" class="btn" style="background: var(--primary); color: var(--darker);">CRIAR</button>
+          <button type="button" class="btn" style="justify-content: center;" onclick="closeModal('createSetlistModal')">Cancelar</button>
+          <button type="submit" class="btn-save">Criar</button>
         </div>
       </form>
     </div>
@@ -1033,25 +1210,25 @@
   <!-- Modal: Configurações -->
   <div class="modal" id="settingsModal">
     <div class="modal-content">
-      <div class="modal-title">⚙️ CONFIGURAÇÕES</div>
+      <div class="modal-title">⚙️ Configurações</div>
       <div class="form-group">
         <label class="form-label">Nome do Dispositivo</label>
         <input type="text" class="form-input" id="deviceNameInput" placeholder="Ex: Notebook do Palco">
       </div>
       <div class="form-group">
         <label class="form-label">ID do Cliente</label>
-        <input type="text" class="form-input" id="clientIdDisplay" readonly>
+        <input type="text" class="form-input" id="clientIdDisplay" readonly style="opacity: 0.6;">
       </div>
       <div class="form-group">
         <label class="form-label">Informações do Servidor</label>
-        <div style="font-size: 11px; color: var(--accent); line-height: 1.8;">
-          <div>Endereço: <span id="serverAddress">-</span></div>
-          <div>Status: <span id="serverStatus">Desconectado</span></div>
-          <div>Latência: <span id="latency">-ms</span></div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8; padding: 10px; background: #fafaf8; border-radius: 10px;">
+          <div>Endereço: <span id="serverAddress" style="font-weight: 600;">-</span></div>
+          <div>Status: <span id="serverStatus" style="font-weight: 600;">Desconectado</span></div>
+          <div>Latência: <span id="latency" style="font-weight: 600;">-ms</span></div>
         </div>
       </div>
       <div class="modal-buttons">
-        <button type="button" class="btn" onclick="closeModal('settingsModal')">FECHAR</button>
+        <button type="button" class="btn" style="justify-content: center; flex: 1;" onclick="closeModal('settingsModal')">Fechar</button>
       </div>
     </div>
   </div>
@@ -1073,7 +1250,7 @@
       currentSongIndex: null,
       currentSetlist: null,
       editingSetlist: null,
-      viewingSetlistId: null,   // 📂 NOVO: filtro local da sidebar
+      viewingSetlistId: null,
       transpose: 0,
       capotraste: 0,
       autoScrollSpeed: 0,
@@ -1081,10 +1258,10 @@
       scrollPosition: 0,
       stageMode: false,
       viewerMode: false,
-      singerMode: false,        // 🎤 NOVO: modo cantor (só letra)
-      fontSize: 16,             // 🔤 NOVO: tamanho da fonte normal
-      singerFontSize: 28,       // 🔤 NOVO: tamanho da fonte do modo cantor
-      theme: 'dark',
+      singerMode: false,
+      fontSize: 16,
+      singerFontSize: 28,
+      theme: 'light',
       songs: [],
       setlists: [],
       clientsCount: 0,
@@ -1120,7 +1297,7 @@
 
         appState.ws.onopen = () => {
           console.log('✅ Conectado ao servidor');
-          updateConnectionStatus('Conectado', '#00ff41');
+          updateConnectionStatus('Conectado', 'var(--success)');
           appState.ws.send(JSON.stringify({ type: 'requestState' }));
         };
 
@@ -1131,7 +1308,7 @@
 
         appState.ws.onerror = (error) => {
           console.error('❌ Erro WebSocket:', error);
-          updateConnectionStatus('Erro', '#ff4444');
+          updateConnectionStatus('Erro', 'var(--danger)');
         };
 
         appState.ws.onclose = () => {
@@ -1141,7 +1318,7 @@
         };
       } catch (err) {
         console.error('Erro ao conectar:', err);
-        updateConnectionStatus('Erro', '#ff4444');
+        updateConnectionStatus('Erro', 'var(--danger)');
       }
     }
 
@@ -1157,7 +1334,7 @@
           renderSongs();
           renderSetlists();
           updateUI();
-          showToast(`${message.isHost ? '🎸 Você é o HOST' : '👁️ Você é um VISUALIZADOR'}`);
+          showToast(`${message.isHost ? '🎸 Você é o Líder de Louvor' : '👁️ Você é um Visualizador'}`);
           break;
 
         case 'stateSync':
@@ -1175,7 +1352,7 @@
           if (message.clientId === appState.clientId) {
             appState.isHost = true;
             updateUI();
-            showToast('🎸 Você é o novo HOST!');
+            showToast('🎸 Você é o novo Líder de Louvor!');
           }
           break;
 
@@ -1318,19 +1495,15 @@
       });
     }
 
-    // Clicar numa setlist: aplica filtro LOCAL (todos os usuários) e,
-    // se for host, também envia para o servidor sincronizar a seleção ativa.
     function selectSetlist(id) {
       const setlist = appState.setlists.find(s => s.id === id);
       if (!setlist) return;
 
-      // Filtro local — todo mundo pode filtrar sua visão
       appState.viewingSetlistId = id;
       renderSongs();
       renderSetlists();
       updateSongsHeader();
 
-      // Só host sincroniza para os demais
       if (appState.isHost) {
         sendMessage({
           type: 'selectSetlist',
@@ -1362,7 +1535,7 @@
           return;
         }
       }
-      title.textContent = '📚 REPERTÓRIO';
+      title.textContent = '📚 Repertório';
       title.classList.remove('filtered');
       if (clearBtn) clearBtn.style.display = 'none';
       if (addBtn) addBtn.style.display = 'none';
@@ -1436,12 +1609,12 @@
       localStorage.setItem('cifrahub_viewerMode', appState.viewerMode);
     }
 
-    // 🎤 MODO CANTOR — local (cada usuário tem o seu)
+    // 🎤 MODO CANTOR
     function toggleSingerMode() {
       appState.singerMode = !appState.singerMode;
       const btn = document.getElementById('singerModeBtn');
       if (btn) {
-        btn.textContent = appState.singerMode ? '🎸 CIFRA' : '🎤 CANTOR';
+        btn.textContent = appState.singerMode ? '🎸 Cifra' : '🎤 Cantor';
         btn.classList.toggle('active');
       }
       const fontLabel = document.getElementById('fontSizeLabel');
@@ -1454,7 +1627,7 @@
       showToast(appState.singerMode ? '🎤 Modo Cantor ativado' : '🎸 Modo Cifra ativado');
     }
 
-    // 🔤 TAMANHO DA FONTE — local (cada usuário tem o seu)
+    // 🔤 TAMANHO DA FONTE
     function updateFontSize() {
       const slider = document.getElementById('fontSizeSlider');
       if (!slider) return;
@@ -1492,7 +1665,6 @@
     }
 
     // ═══════════════════════════ TRANSPOSIÇÃO CROMÁTICA ═══════════════════════════
-    // Normaliza uma nota (aceita bemóis) para índice em CONFIG.NOTES (sustenidos)
     function noteToIndex(note) {
       if (!note) return -1;
       const direct = CONFIG.NOTES.indexOf(note);
@@ -1502,8 +1674,6 @@
       return -1;
     }
 
-    // Transpõe apenas a parte "nota" (ex: "C", "F#", "Bb") em N semitons.
-    // Retorna a nova nota em sustenidos.
     function transposeNote(note, semitones) {
       const idx = noteToIndex(note);
       if (idx === -1) return note;
@@ -1512,12 +1682,9 @@
       return CONFIG.NOTES[newIdx];
     }
 
-    // Transpõe um acorde completo (com sufixo e baixo).
-    // Ex: "C", "Cm", "C#m7", "Dsus4", "Em7/G", "Bb9", "F#maj7"
     function transposeChord(chord, semitones) {
       if (!chord || chord.length === 0 || semitones === 0) return chord;
 
-      // Regex: captura nota raiz (A-G + opcional # ou b), sufixo, e opcional /baixo
       const regex = /^([A-G])([#b]?)([^\/]*)(?:\/([A-G])([#b]?)(.*))?$/;
       const match = chord.trim().match(regex);
 
@@ -1544,7 +1711,7 @@
       return result;
     }
 
-    // ═══════════════════════════ RENDERIZAÇÃO DA CIFRA ═══════════════════════════
+    // ═══════════════════════════ RENDERIZAÇÃO DA CIFRA (ESTILO CIFRA CLUB) ═══════════════════════════
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;')
@@ -1552,43 +1719,151 @@
         .replace(/>/g, '&gt;');
     }
 
+    function isChordToken(token) {
+      return /^[A-G](#|b)?(m|maj|min|sus|dim|aug|add)?[0-9]*(\/[A-G](#|b)?)?$/.test(token);
+    }
+
+    function isChordLine(line) {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      if (/^\[[^\]]+\]$/.test(trimmed)) return false;
+      const clean = trimmed.replace(/^\[[^\]]+\]\s*/, '');
+      const tokens = clean.split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return false;
+      const valid = tokens.filter(isChordToken).length;
+      return valid > 0 && valid >= Math.ceil(tokens.length * 0.65);
+    }
+
+    function wrapChordsInLine(line, semitones) {
+      const regex = /(?:^|(?<=[^A-Za-z0-9#]))([A-G][#b]?(?:m|maj|min|sus|dim|aug|add)?[0-9]*(?:\/[A-G][#b]?)?)(?![A-Za-z0-9#])/g;
+      let result = '';
+      let lastIndex = 0;
+      let match;
+
+      while ((match = regex.exec(line)) !== null) {
+        const chord = match[1];
+        const trans = semitones !== 0 ? transposeChord(chord, semitones) : chord;
+        const matchStart = match.index;
+        result += escapeHtml(line.substring(lastIndex, matchStart));
+        result += `<b class="cifra-chord">${escapeHtml(trans)}</b>`;
+        lastIndex = matchStart + chord.length;
+        regex.lastIndex = lastIndex;
+      }
+      result += escapeHtml(line.substring(lastIndex));
+      return result;
+    }
+
     function renderCifra() {
       const container = document.getElementById('cifraDisplay');
       if (!container) return;
 
-      // Aplicar classe e tamanho de fonte (sempre, mesmo sem música)
-      container.classList.toggle('singer-mode', !!appState.singerMode);
       const fs = appState.singerMode ? appState.singerFontSize : appState.fontSize;
       container.style.fontSize = (fs || 16) + 'px';
 
       if (!appState.currentSong) {
-        container.textContent = 'Nenhuma música selecionada';
+        container.className = 'cifra-sheet';
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 15px;">Nenhuma música selecionada.<br>Escolha uma música no repertório ao lado para começar.</div>';
         return;
       }
 
-      const cifra = appState.currentSong.cifra || '';
-      const lines = cifra.split('\n');
-      let html = '';
-
-      // Shift total: transposição do usuário + capotraste.
-      // Capotraste: se você coloca capo N, os acordes que você TOCA ficam N semitons abaixo
-      // do som real. Então, para mostrar "o que tocar com capo", transpomos -N.
+      const cifraText = appState.currentSong.cifra || '';
       const totalShift = (appState.transpose || 0) - (appState.capotraste || 0);
+      const isSinger = !!appState.singerMode;
 
-      lines.forEach(line => {
-        // Escapar primeiro, e depois montar o HTML dos acordes,
-        // para evitar injeção a partir do conteúdo da cifra.
-        let safe = escapeHtml(line);
+      const rawLines = cifraText.replace(/\r\n/g, '\n').split('\n');
+      const htmlOutput = [];
 
-        safe = safe.replace(/\[([^\]]+)\]/g, (match, chord) => {
-          const finalChord = totalShift !== 0 ? transposeChord(chord, totalShift) : chord;
-          return `<span class="cifra-chord" style="background: rgba(0, 255, 65, 0.3); padding: 2px 6px; border-radius: 3px; display: inline-block; margin: 0 4px;">[${escapeHtml(finalChord)}]</span>`;
-        });
+      for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i];
+        const trimmed = line.trim();
 
-        html += safe + '<br>';
-      });
+        // 1. Linha em branco
+        if (!trimmed) {
+          htmlOutput.push('<span class="cifra-empty-line">\n</span>');
+          continue;
+        }
 
-      container.innerHTML = html;
+        // 2. Tom da música (ex: Tom: G)
+        if (/^Tom:\s*[A-G]/i.test(trimmed)) {
+          if (isSinger) continue;
+          const transLine = totalShift !== 0
+            ? trimmed.replace(/([A-G][#b]?m?)/g, c => transposeChord(c, totalShift))
+            : trimmed;
+          htmlOutput.push(`<span class="cifra-info">${escapeHtml(transLine)}</span>\n`);
+          continue;
+        }
+
+        // 3. Seção pura (ex: [Intro], [Refrão], [Verso 1], [Solo], [Final])
+        const sectionAlone = trimmed.match(/^\[([A-Za-zÀ-ÿ0-9\s\-_]+)\]$/);
+        if (sectionAlone) {
+          htmlOutput.push(`<span class="cifra-section">[${escapeHtml(sectionAlone[1])}]</span>\n`);
+          continue;
+        }
+
+        // 4. Seção com acordes na mesma linha (ex: [Intro] E A D B7)
+        const sectionWithChords = line.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_]+\])\s*(.*)$/);
+        if (sectionWithChords && isChordLine(sectionWithChords[2])) {
+          if (isSinger) continue;
+          const sec = `<span class="cifra-section">${escapeHtml(sectionWithChords[1])}</span> `;
+          const chords = wrapChordsInLine(sectionWithChords[2], totalShift);
+          htmlOutput.push(sec + chords + '\n');
+          continue;
+        }
+
+        // 5. Linha de acordes tradicional (acima da letra, com espaços - formato nativo Cifra Club)
+        if (isChordLine(line)) {
+          if (isSinger) continue;
+          htmlOutput.push(wrapChordsInLine(line, totalShift) + '\n');
+          continue;
+        }
+
+        // 6. Linha com acordes inline [C]Texto
+        if (/\[([A-G][^\]]*)\]/.test(line)) {
+          if (isSinger) {
+            const cleanLyric = line.replace(/\[[^\]]+\]/g, '').trim();
+            if (cleanLyric) {
+              htmlOutput.push(`<span class="cifra-lyric-line">${escapeHtml(cleanLyric)}</span>\n`);
+            }
+            continue;
+          }
+
+          // Converte inline [Acorde] para alinhamento Cifra Club monoespaçado perfeito
+          let chordLine = '';
+          let lyricLine = '';
+          const regex = /\[([A-G][^\]]*)\]|([^\[]+)/g;
+          let match;
+
+          while ((match = regex.exec(line)) !== null) {
+            if (match[1]) {
+              const rawChord = match[1];
+              const chord = totalShift !== 0 ? transposeChord(rawChord, totalShift) : rawChord;
+              const targetCol = lyricLine.length;
+
+              if (chordLine.length < targetCol) {
+                chordLine += ' '.repeat(targetCol - chordLine.length);
+              } else if (chordLine.length > targetCol) {
+                chordLine += ' ';
+                while (lyricLine.length < chordLine.length - chord.length) {
+                  lyricLine += ' ';
+                }
+              }
+              chordLine += chord;
+            } else if (match[2]) {
+              lyricLine += match[2];
+            }
+          }
+
+          htmlOutput.push(wrapChordsInLine(chordLine, 0) + '\n');
+          htmlOutput.push(escapeHtml(lyricLine) + '\n');
+          continue;
+        }
+
+        // 7. Linha de letra comum
+        htmlOutput.push(escapeHtml(line) + '\n');
+      }
+
+      container.className = 'cifra-sheet' + (isSinger ? ' singer-mode' : '');
+      container.innerHTML = htmlOutput.join('');
     }
 
     // ═══════════════════════════ RENDERIZAR INTERFACE ═══════════════════════════
@@ -1597,7 +1872,6 @@
       if (!list) return;
       list.innerHTML = '';
 
-      // Se há filtro, mostrar só as músicas dessa setlist (na ordem da setlist)
       let songsToShow;
       let filteredSetlist = null;
       if (appState.viewingSetlistId) {
@@ -1616,7 +1890,7 @@
 
       if (songsToShow.length === 0) {
         const empty = document.createElement('div');
-        empty.style.cssText = 'color: var(--text); opacity: 0.6; font-size: 11px; padding: 8px; text-align: center;';
+        empty.style.cssText = 'color: var(--text-muted); font-size: 12px; padding: 12px; text-align: center;';
         empty.textContent = filteredSetlist
           ? 'Setlist vazia. Clique em "+" para adicionar músicas.'
           : 'Nenhuma música no repertório.';
@@ -1635,12 +1909,11 @@
           if (appState.isHost) {
             selectSong(index);
           } else {
-            showToast('⚠️ Apenas o HOST pode trocar a música em tempo real');
+            showToast('⚠️ Apenas o Líder pode trocar a música');
           }
         };
         wrapper.appendChild(div);
 
-        // Se estamos vendo uma setlist e somos host: botão "✕" remove a música da setlist
         if (filteredSetlist && appState.isHost) {
           const removeBtn = document.createElement('button');
           removeBtn.className = 'song-item-remove';
@@ -1676,27 +1949,26 @@
         div.innerHTML = `<div class="setlist-name">${setlist.name}</div><div class="setlist-count">${setlist.songs.length} música(s)</div>`;
         div.onclick = () => selectSetlist(setlist.id);
 
-        // Container de botões (EDITAR + REMOVER)
         const btnRow = document.createElement('div');
-        btnRow.style.cssText = 'display: flex; gap: 5px; margin-top: 5px;';
+        btnRow.style.cssText = 'display: flex; gap: 5px; margin-top: 6px;';
 
         const editBtn = document.createElement('button');
-        editBtn.className = 'btn accent';
-        editBtn.style.cssText = 'flex: 1; font-size: 10px; padding: 4px;';
-        editBtn.textContent = '✎ EDITAR';
+        editBtn.className = 'btn';
+        editBtn.style.cssText = 'flex: 1; font-size: 11px; padding: 5px; justify-content: center;';
+        editBtn.textContent = '✎ Editar';
         editBtn.onclick = (e) => {
           e.stopPropagation();
           if (appState.isHost) {
             showEditSetlistModal(setlist.id);
           } else {
-            showToast('⚠️ Apenas o HOST pode editar setlists');
+            showToast('⚠️ Apenas o Líder pode editar setlists');
           }
         };
 
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'btn';
-        deleteBtn.style.cssText = 'flex: 1; font-size: 10px; padding: 4px;';
-        deleteBtn.textContent = 'REMOVER';
+        deleteBtn.style.cssText = 'flex: 1; font-size: 11px; padding: 5px; color: var(--danger); justify-content: center;';
+        deleteBtn.textContent = 'Remover';
         deleteBtn.onclick = (e) => {
           e.stopPropagation();
           if (appState.isHost) {
@@ -1704,7 +1976,7 @@
               sendMessage({ type: 'deleteSetlist', id: setlist.id });
             }
           } else {
-            showToast('⚠️ Apenas o HOST pode remover setlists');
+            showToast('⚠️ Apenas o Líder pode remover setlists');
           }
         };
 
@@ -1716,13 +1988,19 @@
     }
 
     function updateUI() {
-      // Atualizar header
       if (appState.currentSong) {
         document.getElementById('currentSongTitle').textContent = appState.currentSong.title;
-        document.getElementById('currentSongMeta').textContent = `${appState.currentSong.artist} • Tom: ${appState.currentSong.key} • ${appState.currentSong.tempo} BPM`;
+        const totalShift = (appState.transpose || 0) - (appState.capotraste || 0);
+        let keyDisplay = appState.currentSong.key || '';
+        if (keyDisplay && totalShift !== 0) {
+          const transKey = transposeChord(keyDisplay, totalShift);
+          keyDisplay = `${transKey} (Original: ${appState.currentSong.key})`;
+        }
+        const artist = appState.currentSong.artist ? `${appState.currentSong.artist} • ` : '';
+        const tempo = appState.currentSong.tempo ? ` • ${appState.currentSong.tempo} BPM` : '';
+        document.getElementById('currentSongMeta').textContent = `${artist}Tom: ${keyDisplay}${tempo}`;
       }
 
-      // Atualizar sliders
       document.getElementById('transposeSlider').value = appState.transpose;
       document.getElementById('transposeValue').textContent = (appState.transpose > 0 ? '+' : '') + appState.transpose;
       document.getElementById('capoSlider').value = appState.capotraste;
@@ -1730,7 +2008,6 @@
       document.getElementById('scrollSlider').value = appState.autoScrollSpeed;
       document.getElementById('scrollSpeed').textContent = appState.autoScrollSpeed;
 
-      // Modo palco
       const container = document.getElementById('container');
       if (appState.stageMode) {
         container.classList.add('stage-mode');
@@ -1738,7 +2015,6 @@
         container.classList.remove('stage-mode');
       }
 
-      // Modo visualizador
       if (appState.viewerMode) {
         container.classList.add('viewer-mode');
         document.getElementById('viewerModeBtn').style.display = 'none';
@@ -1749,30 +2025,26 @@
         document.getElementById('normalModeBtn').style.display = 'none';
       }
 
-      // Modo cantor (rótulo do botão)
       const singerBtn = document.getElementById('singerModeBtn');
       if (singerBtn) {
-        singerBtn.textContent = appState.singerMode ? '🎸 CIFRA' : '🎤 CANTOR';
+        singerBtn.textContent = appState.singerMode ? '🎸 Cifra' : '🎤 Cantor';
         singerBtn.classList.toggle('active', appState.singerMode);
       }
 
-      // Atualizar slider/rótulo de fonte
       const fontSlider = document.getElementById('fontSizeSlider');
       const fontLabel = document.getElementById('fontSizeLabel');
       if (fontSlider) fontSlider.value = appState.singerMode ? appState.singerFontSize : appState.fontSize;
       if (fontLabel) fontLabel.textContent = appState.singerMode ? 'Cantor' : 'Normal';
       updateFontSizeDisplay();
 
-      // Atualizar header da seção de músicas (filtro)
       updateSongsHeader();
 
-      // Controles do host
       const hostControls = document.getElementById('hostControlsGroup');
       if (appState.isHost) {
         hostControls.style.display = 'block';
         document.getElementById('hostBadge').style.display = 'block';
         document.getElementById('viewerBadge').style.display = 'none';
-        document.getElementById('roleDisplay').textContent = 'HOST 🎸';
+        document.getElementById('roleDisplay').textContent = 'LÍDER 🎸';
       } else {
         hostControls.style.display = 'none';
         document.getElementById('hostBadge').style.display = 'none';
@@ -1780,23 +2052,18 @@
         document.getElementById('roleDisplay').textContent = 'VIEWER 👁️';
       }
 
-      // Botões de navegação (só host)
       const canPrev = appState.isHost && appState.currentSetlist && appState.currentSongIndex > 0;
       const canNext = appState.isHost && appState.currentSetlist && appState.currentSongIndex < appState.currentSetlist.songs.length - 1;
       document.getElementById('prevBtn').disabled = !canPrev;
       document.getElementById('nextBtn').disabled = !canNext;
 
-      // Botão palco: só host
       const stageBtn = document.getElementById('stageModeBtn');
       if (stageBtn) stageBtn.disabled = !appState.isHost;
 
-      // Contador de clientes
       document.getElementById('clientsCount').textContent = appState.clientsCount;
 
-      // Renderizar cifra
       renderCifra();
 
-      // Desabilitar controles de host (transpose/capo/autoscroll) se não for host
       const hostOnly = !appState.isHost;
       document.getElementById('transposeSlider').disabled = hostOnly;
       document.getElementById('capoSlider').disabled = hostOnly;
@@ -1829,14 +2096,14 @@
       if (!appState.isHost) return;
       appState.editingSetlist = null;
       const title = document.getElementById('createSetlistModal').querySelector('.modal-title');
-      title.textContent = '📋 NOVA SETLIST';
+      title.textContent = '📋 Nova Setlist';
       document.getElementById('newSetlistName').value = '';
       const checkboxDiv = document.getElementById('setlistSongsCheckbox');
       checkboxDiv.innerHTML = '';
 
       appState.songs.forEach(song => {
         const label = document.createElement('label');
-        label.style.cssText = 'display: block; margin-bottom: 8px; cursor: pointer; color: var(--text);';
+        label.style.cssText = 'display: block; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 13px;';
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.value = song.id;
@@ -1856,14 +2123,14 @@
 
       appState.editingSetlist = setlist;
       const title = document.getElementById('createSetlistModal').querySelector('.modal-title');
-      title.textContent = '✎️ EDITAR SETLIST';
+      title.textContent = '✎ Editar Setlist';
       document.getElementById('newSetlistName').value = setlist.name;
       const checkboxDiv = document.getElementById('setlistSongsCheckbox');
       checkboxDiv.innerHTML = '';
 
       appState.songs.forEach(song => {
         const label = document.createElement('label');
-        label.style.cssText = 'display: block; margin-bottom: 8px; cursor: pointer; color: var(--text);';
+        label.style.cssText = 'display: block; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 13px;';
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.value = song.id;
@@ -1889,10 +2156,10 @@
       document.getElementById(id).classList.remove('active');
     }
 
-    // ═══════════════════════════ ADICIONAR MÚSICAS À SETLIST (filtro ativo) ═══════════════════════════
+    // ═══════════════════════════ ADICIONAR MÚSICAS À SETLIST ═══════════════════════════
     function showAddToSetlistModal() {
       if (!appState.isHost) {
-        showToast('⚠️ Apenas o HOST pode editar setlists');
+        showToast('⚠️ Apenas o Líder pode editar setlists');
         return;
       }
       if (!appState.viewingSetlistId) return;
@@ -1903,14 +2170,13 @@
       const box = document.getElementById('addToSetlistCheckbox');
       box.innerHTML = '';
 
-      // Só músicas que AINDA NÃO estão na setlist
       const available = appState.songs.filter(s => !setlist.songs.includes(s.id));
       if (available.length === 0) {
-        box.innerHTML = '<div style="color: var(--text); opacity: 0.6; font-size: 11px;">Todas as músicas já estão nesta setlist.</div>';
+        box.innerHTML = '<div style="color: var(--text-muted); font-size: 12px;">Todas as músicas já estão nesta setlist.</div>';
       } else {
         available.forEach(song => {
           const label = document.createElement('label');
-          label.style.cssText = 'display: block; margin-bottom: 8px; cursor: pointer; color: var(--text);';
+          label.style.cssText = 'display: block; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 13px;';
           const input = document.createElement('input');
           input.type = 'checkbox';
           input.value = song.id;
@@ -1937,7 +2203,6 @@
         return;
       }
 
-      // Evitar duplicatas
       const newSongs = [...setlist.songs];
       checked.forEach(id => { if (!newSongs.includes(id)) newSongs.push(id); });
 
@@ -1954,7 +2219,7 @@
       showToast(`✅ ${checked.length} música(s) adicionada(s)`);
     }
 
-    // ═══════════════════════════ REMOVER MÚSICA DO REPERTÓRIO ═══════════════════════════
+    // ═══════════════════════════ REMOVER MÚSICA ═══════════════════════════
     function deleteCurrentSong() {
       if (!appState.isHost || !appState.currentSong) {
         showToast('⚠️ Selecione uma música primeiro');
@@ -1969,7 +2234,6 @@
     }
 
     // ═══════════════════════════ IMPORTAÇÃO DE .TXT ═══════════════════════════
-    // Detecta se uma linha é "linha de acordes" (só acordes + espaços)
     function isChordLine(line) {
       const trimmed = line.trim();
       if (!trimmed) return false;
@@ -1980,8 +2244,6 @@
       return ok.length > 0 && ok.length >= Math.ceil(tokens.length * 0.7);
     }
 
-    // Converte texto com acordes acima da letra para formato inline [C]Letra
-    // Mantém a quebra de linhas original para evitar "virar tudo uma linha"
     function parseTxtCifra(input) {
       if (!input) return '';
       const lines = input.replace(/\r\n/g, '\n').split('\n');
@@ -1995,13 +2257,11 @@
         const line = lines[i] || '';
         const next = lines[i + 1] || '';
 
-        // Já no formato inline
         if (/\[[A-G][^\]]*\]/.test(line)) {
           out.push(line);
           continue;
         }
 
-        // Bloco de acorde em cima + letra embaixo
         if (isChordLine(line) && !isEmptyLine(next)) {
           const chordMatches = [];
           const regex = /([A-G](?:#|b)?(?:m|maj|min|sus|dim|aug)?\d*(?:\/[A-G](?:#|b)?)?)/gi;
@@ -2022,12 +2282,11 @@
             if (cursor < next.length) merged += next.slice(cursor);
 
             out.push(merged);
-            i++; // consumiu a linha da letra
+            i++;
             continue;
           }
         }
 
-        // linha normal
         out.push(line);
       }
 
@@ -2040,9 +2299,8 @@
       const reader = new FileReader();
       reader.onload = (e) => {
         const raw = String(e.target.result || '');
-        const parsed = parseTxtCifra(raw);
-        document.getElementById('newSongCifra').value = parsed || raw;
-        showToast('✅ TXT importado e convertido');
+        document.getElementById('newSongCifra').value = raw;
+        showToast('✅ TXT importado com sucesso');
       };
       reader.readAsText(file, 'utf-8');
       event.target.value = '';
@@ -2110,7 +2368,6 @@
       const songs = Array.from(checkboxes).map(cb => cb.value);
 
       if (appState.editingSetlist) {
-        // Editar setlist existente
         sendMessage({
           type: 'updateSetlist',
           setlist: {
@@ -2120,7 +2377,6 @@
           }
         });
       } else {
-        // Criar nova setlist
         sendMessage({
           type: 'createSetlist',
           name,
@@ -2150,50 +2406,15 @@
       appState.singerMode = localStorage.getItem('cifrahub_singerMode') === 'true';
       appState.fontSize = parseInt(localStorage.getItem('cifrahub_fontSize') || '16', 10);
       appState.singerFontSize = parseInt(localStorage.getItem('cifrahub_singerFontSize') || '28', 10);
-
-      // Tema: se não houver preferência salva, usa a do sistema
-      const savedTheme = localStorage.getItem('cifrahub_theme');
-      if (savedTheme) {
-        appState.theme = savedTheme;
-      } else {
-        const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-        appState.theme = prefersLight ? 'light' : 'dark';
-      }
-
-      applyTheme(appState.theme);
-
-      // Ouvir mudanças do sistema (só se usuário NÃO fixou manualmente)
-      if (window.matchMedia) {
-        try {
-          const mql = window.matchMedia('(prefers-color-scheme: light)');
-          const listener = (e) => {
-            if (!localStorage.getItem('cifrahub_theme')) {
-              appState.theme = e.matches ? 'light' : 'dark';
-              applyTheme(appState.theme);
-            }
-          };
-          if (mql.addEventListener) mql.addEventListener('change', listener);
-          else if (mql.addListener) mql.addListener(listener);
-        } catch (err) { /* ignore */ }
-      }
+      appState.theme = 'light';
     }
 
     function applyTheme(theme) {
-      const btn = document.querySelector('.theme-toggle');
-      if (theme === 'light') {
-        document.body.classList.add('light-theme');
-        if (btn) btn.textContent = '☀️ CLARO';
-      } else {
-        document.body.classList.remove('light-theme');
-        if (btn) btn.textContent = '🌙 ESCURO';
-      }
+      // Single theme — always light
     }
 
     function toggleTheme() {
-      appState.theme = appState.theme === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('cifrahub_theme', appState.theme);
-      applyTheme(appState.theme);
-      showToast(`🎨 Tema: ${appState.theme === 'dark' ? 'Escuro 🌙' : 'Claro ☀️'}`);
+      // Disabled — single theme
     }
 
     // ═══════════════════════════ NOTIFICAÇÕES ═══════════════════════════
