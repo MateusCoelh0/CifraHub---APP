@@ -1,9 +1,11 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import { pool, loadBandLibrary, insertSong, updateSong, removeSong, savePlaylist, removePlaylist } from './src/db/repository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,9 +35,18 @@ let appState = {
 
 let hostClient = null;
 const connectedClients = new Map();
+let activeBandId = null;
 
 // Carregar dados persistidos
-function loadData() {
+async function loadData() {
+  if (pool) {
+    const library = await loadBandLibrary(process.env.LEGACY_OWNER_EMAIL);
+    activeBandId = library.bandId;
+    appState.songs = library.songs;
+    appState.setlists = library.setlists;
+    console.log(`PostgreSQL conectado: ${appState.songs.length} músicas carregadas.`);
+    return;
+  }
   try {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
@@ -140,7 +151,7 @@ wss.on('connection', (ws) => {
   });
 
   // Receber mensagens
-  ws.on('message', (data) => {
+  ws.on('message', async (data) => {
     try {
       const message = JSON.parse(data);
       const sender = connectedClients.get(clientId);
@@ -271,7 +282,7 @@ wss.on('connection', (ws) => {
 
         case 'addSong':
           if (sender.isHost) {
-            const newSong = {
+            let newSong = {
               id: Date.now().toString(),
               title: message.title || 'Nova Música',
               artist: message.artist || 'Artista',
@@ -279,8 +290,9 @@ wss.on('connection', (ws) => {
               tempo: message.tempo || 120,
               cifra: message.cifra || '[C]Cifra aqui...'
             };
+            if (pool) newSong = await insertSong(activeBandId, newSong);
             appState.songs.push(newSong);
-            saveData();
+            if (!pool) saveData();
             broadcast({
               type: 'songAdded',
               song: newSong
@@ -292,8 +304,9 @@ wss.on('connection', (ws) => {
           if (sender.isHost) {
             const idx = appState.songs.findIndex(s => s.id === message.song.id);
             if (idx !== -1) {
+              if (pool && !(await updateSong(activeBandId, message.song))) break;
               appState.songs[idx] = message.song;
-              saveData();
+              if (!pool) saveData();
               if (appState.currentSong && appState.currentSong.id === message.song.id) {
                 appState.currentSong = message.song;
               }
@@ -307,13 +320,15 @@ wss.on('connection', (ws) => {
 
         case 'createSetlist':
           if (sender.isHost) {
-            const newSetlist = {
-              id: Date.now().toString(),
+            let newSetlist = {
+              id: null,
               name: message.name || 'Nova Setlist',
               songs: message.songs || []
             };
+            if (pool) newSetlist = await savePlaylist(activeBandId, newSetlist);
+            else newSetlist.id = Date.now().toString();
             appState.setlists.push(newSetlist);
-            saveData();
+            if (!pool) saveData();
             broadcast({
               type: 'setlistCreated',
               setlist: newSetlist
@@ -325,11 +340,12 @@ wss.on('connection', (ws) => {
           if (sender.isHost) {
             const idx = appState.setlists.findIndex(s => s.id === message.setlist.id);
             if (idx !== -1) {
-              appState.setlists[idx] = message.setlist;
-              saveData();
+              const updatedSetlist = pool ? await savePlaylist(activeBandId, message.setlist) : message.setlist;
+              appState.setlists[idx] = updatedSetlist;
+              if (!pool) saveData();
               broadcast({
                 type: 'setlistUpdated',
-                setlist: message.setlist
+                setlist: updatedSetlist
               });
             }
           }
@@ -337,8 +353,9 @@ wss.on('connection', (ws) => {
 
         case 'deleteSetlist':
           if (sender.isHost) {
+            if (pool) await removePlaylist(activeBandId, message.id);
             appState.setlists = appState.setlists.filter(s => s.id !== message.id);
-            saveData();
+            if (!pool) saveData();
             broadcast({
               type: 'setlistDeleted',
               id: message.id
@@ -349,6 +366,7 @@ wss.on('connection', (ws) => {
         case 'deleteSong':
           if (sender.isHost) {
             const songId = message.id;
+            if (pool) await removeSong(activeBandId, songId);
             // Remove do repertório
             appState.songs = appState.songs.filter(s => s.id !== songId);
             // Remove dessa música de todas as setlists
@@ -361,7 +379,7 @@ wss.on('connection', (ws) => {
               appState.currentSong = null;
               appState.currentSongIndex = null;
             }
-            saveData();
+            if (!pool) saveData();
             broadcast({
               type: 'songDeleted',
               id: songId,
@@ -414,8 +432,7 @@ wss.on('connection', (ws) => {
 });
 
 // Iniciar servidor
-loadData();
-server.listen(PORT, '0.0.0.0', () => {
+loadData().then(() => server.listen(PORT, '0.0.0.0', () => {
   console.log(`
 ╔════════════════════════════════════════╗
 ║    🎸 CIFRAHUB - Show ao Vivo 🎸      ║
@@ -429,4 +446,7 @@ Para conectar:
 
 Músicas carregadas: ${appState.songs.length}
   `);
+})).catch(error => {
+  console.error('Falha ao carregar a biblioteca:', error.message);
+  process.exitCode = 1;
 });
