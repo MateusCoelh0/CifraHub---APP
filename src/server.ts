@@ -63,7 +63,9 @@ function configureHttpApplication(): void {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrcAttr: ["'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
+          styleSrcAttr: ["'unsafe-inline'"],
           imgSrc: ["'self'", "data:"],
           connectSrc: ["'self'", "ws:", "wss:"],
           frameAncestors: ["'none'"],
@@ -133,7 +135,10 @@ function configureHttpApplication(): void {
   app.use("/api/auth", authRoutes);
   app.use(
     "/api/bands",
-    createBandRoutes((sessionId) => sessionService?.connectedDevices(sessionId) ?? 0),
+    createBandRoutes(
+      (sessionId) => sessionService?.connectedDevices(sessionId) ?? 0,
+      (bandId, message) => sessionService?.broadcastToBand(bandId, message),
+    ),
   );
   app.use(notFoundHandler);
   app.use(errorHandler);

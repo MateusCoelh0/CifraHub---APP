@@ -35,7 +35,10 @@ import {
  * @param connectedCounts Consulta a quantidade atual de dispositivos conectados.
  * @returns Roteador Express com as rotas /api/bands.
  */
-export function createBandRoutes(connectedCounts: (sessionId: string) => number): Router {
+export function createBandRoutes(
+  connectedCounts: (sessionId: string) => number,
+  notifyBand?: (bandId: string, message: import("../types/websocket.js").ServerMessage) => void,
+): Router {
   const router = Router();
   router.use(requireAuth);
   router.get("/", async (req, res) => {
@@ -94,11 +97,13 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
     validateRequest("body", songSchema),
     async (req, res) => {
       try {
-        await editSong(req.params.bandId, req.user!.id, {
+        const songData = {
           ...(req.body as Omit<Song, "id">),
           id: req.params.songId,
-        });
-        res.json({ success: true });
+        };
+        await editSong(req.params.bandId, req.user!.id, songData);
+        notifyBand?.(req.params.bandId, { type: "songUpdated", song: songData });
+        res.json({ success: true, data: songData });
       } catch (error) {
         sendError(res, error);
       }
@@ -110,6 +115,8 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
     async (req, res) => {
       try {
         await deleteSong(req.params.bandId, req.user!.id, req.params.songId);
+        const playlists = await listPlaylists(req.params.bandId, req.user!.id);
+        notifyBand?.(req.params.bandId, { type: "songDeleted", id: req.params.songId, setlists: playlists });
         res.status(204).end();
       } catch (error) {
         sendError(res, error);
@@ -126,6 +133,7 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
           ...(req.body as { name: string; songs: string[] }),
           id: "",
         });
+        notifyBand?.(req.params.bandId, { type: "setlistCreated", setlist: playlist });
         res.status(201).json({ success: true, data: playlist });
       } catch (error) {
         sendError(res, error);
@@ -142,6 +150,7 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
           ...(req.body as { name: string; songs: string[] }),
           id: req.params.playlistId,
         });
+        notifyBand?.(req.params.bandId, { type: "setlistUpdated", setlist: playlist });
         res.json({ success: true, data: playlist });
       } catch (error) {
         sendError(res, error);
@@ -154,6 +163,7 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
     async (req, res) => {
       try {
         await deleteBandPlaylist(req.params.bandId, req.user!.id, req.params.playlistId);
+        notifyBand?.(req.params.bandId, { type: "setlistDeleted", id: req.params.playlistId });
         res.status(204).end();
       } catch (error) {
         sendError(res, error);
@@ -207,15 +217,15 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
           res.status(400).json({ error: "Título obrigatório." });
           return;
         }
-        res.status(201).json(
-          await createSong(req.params.bandId, req.user!.id, {
-            title: song.title.trim(),
-            artist: song.artist ?? "",
-            key: song.key ?? "C",
-            tempo: song.tempo ?? 120,
-            cifra: song.cifra ?? "",
-          }),
-        );
+        const created = await createSong(req.params.bandId, req.user!.id, {
+          title: song.title.trim(),
+          artist: song.artist ?? "",
+          key: song.key ?? "C",
+          tempo: song.tempo ?? 120,
+          cifra: song.cifra ?? "",
+        });
+        notifyBand?.(req.params.bandId, { type: "songAdded", song: created });
+        res.status(201).json({ success: true, data: created });
       } catch (error) {
         sendError(res, error);
       }

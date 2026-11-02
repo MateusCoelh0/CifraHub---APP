@@ -80,6 +80,41 @@ export class WebSocketSessionService {
     return this.activeSessions.get(sessionId)?.clients.size ?? 0;
   }
 
+  /** Transmite e sincroniza alterações de repertório para todas as sessões da banda */
+  broadcastToBand(bandId: string, message: ServerMessage): void {
+    const manager = this.managers.get(bandId);
+    if (!manager) return;
+    for (const session of this.activeSessions.values()) {
+      if (session.bandId === bandId) {
+        if (message.type === "songAdded") {
+          if (!session.state.songs.some((s) => s.id === message.song.id)) {
+            session.state.songs.push(message.song);
+          }
+        } else if (message.type === "songUpdated") {
+          const idx = session.state.songs.findIndex((s) => s.id === message.song.id);
+          if (idx !== -1) session.state.songs[idx] = message.song;
+        } else if (message.type === "songDeleted") {
+          session.state.songs = session.state.songs.filter((s) => s.id !== message.id);
+          if (message.setlists) session.state.setlists = message.setlists;
+          if (session.state.currentSong?.id === message.id) {
+            session.state.currentSong = null;
+            session.state.currentSongIndex = null;
+          }
+        } else if (message.type === "setlistCreated") {
+          if (!session.state.setlists.some((sl) => sl.id === message.setlist.id)) {
+            session.state.setlists.push(message.setlist);
+          }
+        } else if (message.type === "setlistUpdated") {
+          const sidx = session.state.setlists.findIndex((s) => s.id === message.setlist.id);
+          if (sidx !== -1) session.state.setlists[sidx] = message.setlist;
+        } else if (message.type === "setlistDeleted") {
+          session.state.setlists = session.state.setlists.filter((s) => s.id !== message.id);
+        }
+        manager.broadcast(session, message);
+      }
+    }
+  }
+
   private async openConnection(
     socket: WebSocket,
     request: import("node:http").IncomingMessage,

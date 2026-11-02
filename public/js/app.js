@@ -55,6 +55,56 @@ function setupEventListeners() {
     if (appState.wsController) appState.wsController.stop();
   });
   document.getElementById("searchInput")?.addEventListener("input", renderSongs);
+
+  // Botões de navegação e modos no header
+  document.getElementById("prevBtn")?.addEventListener("click", previousSong);
+  document.getElementById("nextBtn")?.addEventListener("click", nextSong);
+  document.getElementById("singerModeBtn")?.addEventListener("click", toggleSingerMode);
+  document.getElementById("viewerModeBtn")?.addEventListener("click", toggleViewerMode);
+  document.getElementById("normalModeBtn")?.addEventListener("click", toggleViewerMode);
+  document.getElementById("stageModeBtn")?.addEventListener("click", toggleStageMode);
+
+  // Sliders e botões de controle
+  const tSlider = document.getElementById("transposeSlider");
+  tSlider?.addEventListener("input", updateTranspose);
+  tSlider?.addEventListener("change", updateTranspose);
+
+  document.getElementById("transposeDownBtn")?.addEventListener("click", () => transposeBy(-1));
+  document.getElementById("transposeResetBtn")?.addEventListener("click", transposeReset);
+  document.getElementById("transposeUpBtn")?.addEventListener("click", () => transposeBy(1));
+
+  const cSlider = document.getElementById("capoSlider");
+  cSlider?.addEventListener("input", updateCapo);
+  cSlider?.addEventListener("change", updateCapo);
+
+  const sSlider = document.getElementById("scrollSlider");
+  sSlider?.addEventListener("input", updateAutoScroll);
+  sSlider?.addEventListener("change", updateAutoScroll);
+
+  document.getElementById("fontSizeSlider")?.addEventListener("input", updateFontSize);
+
+  // Ações de repertório e setlists
+  document.getElementById("newSongBtn")?.addEventListener("click", showCreateSongModal);
+  document.getElementById("createSongBtn")?.addEventListener("click", showCreateSongModal);
+  document.getElementById("editSongBtn")?.addEventListener("click", showEditSongModal);
+  document.getElementById("deleteSongBtn")?.addEventListener("click", deleteCurrentSong);
+  document.getElementById("settingsBtn")?.addEventListener("click", showSettingsModal);
+  document.getElementById("createSetlistButton")?.addEventListener("click", showCreateSetlistModal);
+  document.getElementById("addToSetlistBtn")?.addEventListener("click", showAddToSetlistModal);
+  document.getElementById("clearSetlistFilterBtn")?.addEventListener("click", clearSetlistFilter);
+
+  // Formulários com preventDefault
+  document.querySelector("#createSongModal form")?.addEventListener("submit", createSong);
+  document.querySelector("#editSongModal form")?.addEventListener("submit", updateSong);
+  document.querySelector("#createSetlistModal form")?.addEventListener("submit", createSetlist);
+
+  // Fechar modais ao clicar no backdrop escuro
+  document.querySelectorAll(".modal").forEach((modal) => {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.classList.remove("active");
+    });
+  });
+
   const stageScroller = document.getElementById("cifraContainer");
   let lastSentScroll = -1;
   let lastScrollSentAt = 0;
@@ -1467,6 +1517,9 @@ window.previousSong = previousSong;
 window.toggleStageMode = toggleStageMode;
 window.showToast = showToast;
 Object.assign(window, {
+  selectSong,
+  selectSetlist,
+  deleteSetlist,
   showAddToSetlistModal,
   clearSetlistFilter,
   showCreateSetlistModal,

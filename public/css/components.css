@@ -96,7 +96,10 @@ textarea:focus-visible {
 }
 
 .auth-overlay.is-dismissed {
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  z-index: -1 !important;
 }
 
 body.auth-locked #container {

@@ -287,6 +287,7 @@
           <div style="display: flex; gap: 6px; margin-top: 6px">
             <button
               class="btn"
+              id="transposeDownBtn"
               style="flex: 1; padding: 7px; justify-content: center"
               onclick="transposeBy(-1)"
             >
@@ -294,6 +295,7 @@
             </button>
             <button
               class="btn"
+              id="transposeResetBtn"
               style="flex: 1; padding: 7px; justify-content: center"
               onclick="transposeReset()"
             >
@@ -301,6 +303,7 @@
             </button>
             <button
               class="btn"
+              id="transposeUpBtn"
               style="flex: 1; padding: 7px; justify-content: center"
               onclick="transposeBy(1)"
             >
@@ -380,6 +383,7 @@
           <div class="control-title">⚙️ Gerenciar repertório</div>
           <button
             class="btn-primary"
+            id="createSongBtn"
             style="width: 100%; margin-bottom: 6px; justify-content: center"
             onclick="showCreateSongModal()"
           >
@@ -387,6 +391,7 @@
           </button>
           <button
             class="btn"
+            id="editSongBtn"
             style="width: 100%; margin-bottom: 6px; justify-content: center"
             onclick="showEditSongModal()"
           >
@@ -394,6 +399,7 @@
           </button>
           <button
             class="btn"
+            id="deleteSongBtn"
             style="
               width: 100%;
               justify-content: center;
@@ -409,6 +415,7 @@
         <div style="margin-top: auto; padding-top: 10px">
           <button
             class="btn"
+            id="settingsBtn"
             style="
               width: 100%;
               justify-content: center;

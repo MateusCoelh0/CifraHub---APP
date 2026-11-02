@@ -75,8 +75,11 @@ export class SessionManager {
       session.hostReclaimUntil = 0;
       session.hostId = client.id;
       client.isHost = true;
-    } else if (!session.hostId && canControl && Date.now() >= session.hostReclaimUntil) {
-      session.hostToken = randomUUID();
+    } else if (!session.hostId && canControl && (Date.now() >= session.hostReclaimUntil || session.clients.size === 1)) {
+      if (session.hostGraceTimer) clearTimeout(session.hostGraceTimer);
+      session.hostGraceTimer = null;
+      session.hostReclaimUntil = 0;
+      session.hostToken = session.hostToken ?? randomUUID();
       session.hostId = client.id;
       client.isHost = true;
     }
@@ -91,18 +94,14 @@ export class SessionManager {
     session.clients.delete(clientId);
     if (session.hostId !== clientId) return null;
     session.hostId = null;
-    session.hostReclaimUntil = Date.now() + 10_000;
     if (session.hostGraceTimer) clearTimeout(session.hostGraceTimer);
-    session.hostGraceTimer = setTimeout(() => {
-      if (session.hostId) return;
-      const next = [...session.clients.values()].find(
-        (client) => client.bandRole === "ADMIN" || client.bandRole === "MEMBER",
-      );
-      if (!next) {
-        session.hostReclaimUntil = 0;
-        session.hostToken = null;
-        return;
-      }
+
+    // Se ainda houver outro integrante autorizado na sala, elege o próximo IMEDIATAMENTE
+    const next = [...session.clients.values()].find(
+      (client) => client.bandRole === "ADMIN" || client.bandRole === "MEMBER",
+    );
+    if (next) {
+      session.hostReclaimUntil = 0;
       session.hostToken = randomUUID();
       session.hostId = next.id;
       next.isHost = true;
@@ -111,6 +110,14 @@ export class SessionManager {
         clientId: next.id,
         hostToken: session.hostToken ?? undefined,
       });
+      return next.id;
+    }
+
+    session.hostReclaimUntil = Date.now() + 10_000;
+    session.hostGraceTimer = setTimeout(() => {
+      if (session.hostId) return;
+      session.hostReclaimUntil = 0;
+      session.hostToken = null;
     }, 10_000);
     return null;
   }
