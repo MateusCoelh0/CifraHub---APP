@@ -5,8 +5,10 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "node dist/server.js",
+    "start:legacy": "node server.js",
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
     "db:check": "node scripts/check-db.js",
     "db:import-legacy": "node scripts/import-legacy-data.js"
   },
@@ -24,5 +26,13 @@
     "express": "^4.18.2",
     "pg": "^8.13.1",
     "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
   }
 }
