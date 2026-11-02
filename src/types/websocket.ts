@@ -1,5 +1,6 @@
 import type { Setlist, SessionState, Song } from "../domain/entities.js";
 
+/** União tipada das mensagens aceitas do navegador para o servidor. */
 export type ClientMessage =
   | { type: "setDeviceName"; name: string }
   | { type: "requestState" }
@@ -11,12 +12,20 @@ export type ClientMessage =
   | { type: "scroll"; position: number }
   | { type: "stageMode"; enabled: boolean }
   | { type: "nextSong" | "previousSong" }
-  | { type: "addSong"; title?: string; artist?: string; key?: string; tempo?: number; cifra?: string }
+  | {
+      type: "addSong";
+      title?: string;
+      artist?: string;
+      key?: string;
+      tempo?: number;
+      cifra?: string;
+    }
   | { type: "updateSong"; song: Song }
   | { type: "deleteSong" | "deleteSetlist"; id: string }
   | { type: "createSetlist"; name?: string; songs?: string[] }
   | { type: "updateSetlist"; setlist: Setlist };
 
+/** União tipada das notificações emitidas pelo servidor aos clientes. */
 export type ServerMessage =
   | { type: "init"; state: SessionState; clientId: string; isHost: boolean; clientsCount: number }
   | { type: "clientsUpdate"; clientsCount: number }
