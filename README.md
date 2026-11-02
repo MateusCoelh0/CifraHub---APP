@@ -5,24 +5,26 @@ Um app web moderno para sincronizar cifras de músicas entre múltiplos disposit
 ## ⚡ Características
 
 ✅ **Sincronização em Tempo Real** via WebSocket
-✅ **Arquitetura HOST/CLIENT** - Primeiro device controla todos
+✅ **Múltiplas bandas e sessões** - Repertórios isolados por equipe
+✅ **Acesso seguro** - Conta para a banda e entrada de convidado por código
 ✅ **Transposição Cromática** - Suporte a sustenidos e bemóis
 ✅ **Capotraste** - Ajuste de traste em tempo real
 ✅ **Auto-Scroll** - Rolagem automática configurável
-✅ **Modo Palco** - Tela preta sem distrações
+✅ **Modo Foco** - Oculta barras para destacar a cifra
 ✅ **Repertório Ilimitado** - Criação e edição de cifras
 ✅ **Setlists** - Organize músicas para o show
-✅ **Design Industrial** - Tema preto com neon (âmbar + verde)
+✅ **Interface clara e dourada** - Vidro fosco e controles táteis para o palco
 ✅ **Sem Framework** - HTML/CSS/JavaScript puro
 ✅ **Funciona Offline** - Roda em rede local sem internet
 
 ## 🚀 Instalação Rápida
 
 ### Pré-requisitos
-- Node.js v14+ instalado
+
+- Node.js v20+ instalado
 - Conexão Wi-Fi ou rede local
 
-### Windows / Mac / Linux
+### Windows (PowerShell)
 
 ```bash
 # 1. Clone ou extraia o repositório
@@ -31,11 +33,48 @@ cd cifrahub
 # 2. Instale as dependências
 npm install
 
-# 3. Inicie o servidor
+# 3. Se ainda não existir, crie o .env a partir do modelo
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+#    Configure DATABASE_URL, JWT_SECRET forte e LEGACY_OWNER_EMAIL.
+#    Para a primeira configuração, aplique migrations/001_initial_multi_tenant.sql.
+```
+
+### macOS / Linux
+
+```bash
+# 1. Clone ou extraia o repositório
+cd cifrahub
+
+# 2. Instale as dependências
+npm install
+
+# 3. Se ainda não existir, crie o .env a partir do modelo
+if [ ! -f .env ]; then cp .env.example .env; fi
+#    Configure DATABASE_URL, JWT_SECRET forte e LEGACY_OWNER_EMAIL.
+#    Para a primeira configuração, aplique migrations/001_initial_multi_tenant.sql.
+```
+
+### Aplicar a migração e iniciar (todas as plataformas)
+
+```bash
+# 4. Aplique a migração dos códigos de sessão e compile
+npm run db:migrate-session-codes
+npm run build
+
+# 5. Inicie o servidor TypeScript
 npm start
 ```
 
 O servidor rodará em `http://localhost:3000`
+
+O `.env.example` é apenas um modelo: substitua os valores de exemplo antes de iniciar. A conta precisa estar cadastrada no PostgreSQL; para definir a senha do administrador legado, use `npm run db:set-owner-password`.
+
+### Estrutura da interface
+
+- `public/index.html` entrega a interface autenticada e compatível com convidados.
+- `public/css/` reúne o tema claro/dourado, componentes e estilo de palco.
+- `public/js/` contém clientes da API, autenticação, contexto de bandas, WebSocket e gestos móveis.
+- `/?code=123456` abre a tela de acesso convidado com o código da sessão preenchido.
 
 ## Publicar na internet (Render)
 
@@ -46,7 +85,7 @@ O projeto inclui `render.yaml` para publicar o servidor Node.js com WebSocket no
 3. O Render vai ler `render.yaml`; confirme a criação do serviço `cifrahub` no plano **Free**.
 4. Ao terminar, abra a URL `https://...onrender.com` fornecida pelo Render.
 
-No plano gratuito, o serviço pode dormir após 15 minutos sem tráfego e levar cerca de um minuto para acordar. O sistema de arquivos é temporário: músicas e setlists adicionados durante os testes podem ser apagados após reinicializações, suspensão ou novo deploy. O arquivo inicial de músicas (`data.json`) não é enviado pelo Git por estar no `.gitignore`; o app inicia com cifras de exemplo quando esse arquivo não existe.
+O serviço de hospedagem precisa de um PostgreSQL acessível e das variáveis `DATABASE_URL`, `JWT_SECRET`, `LEGACY_OWNER_EMAIL` e `CORS_ORIGIN`. Configure-as no painel do provedor antes de iniciar o servidor.
 
 ### Android (Termux)
 
@@ -60,13 +99,16 @@ bash instalar.sh
 
 ## 📱 Como Usar
 
-### No Servidor (um dispositivo qualquer):
+### No servidor (um dispositivo qualquer):
+
 ```bash
 cd cifrahub
-node server.js
+npm run build
+npm start
 ```
 
 Você verá algo como:
+
 ```
 ╔════════════════════════════════════════════╗
 ║    🎸 CIFRAHUB - Show ao Vivo 🎸          ║
@@ -76,87 +118,105 @@ Servidor rodando em: http://0.0.0.0:3000
 ```
 
 ### Encontre seu IP local:
+
 **Windows:**
+
 ```powershell
 ipconfig
 ```
+
 Procure por "IPv4 Address" (algo como 192.168.1.100)
 
 **Mac/Linux/Termux:**
+
 ```bash
 ifconfig
 ```
+
 Procure por algo como: 192.168.x.x ou 10.0.x.x
 
 ### Acesse de outro dispositivo:
+
 - Na mesma rede Wi-Fi ou LAN
 - Abra: `http://<SEU_IP>:3000` (ex: http://192.168.1.100:3000)
 
 ## 🎮 Funcionamento
 
-### 1️⃣ Primeiro Dispositivo = HOST 🎸
+### 1️⃣ Integrante autorizado = HOST 🎸
+
 - Controla qual música está tocando
 - Ajusta transposição de acordes
 - Define capotraste
 - Controla auto-scroll
 - Gerencia repertório e setlists
 
-### 2️⃣ Outros Dispositivos = VISUALIZADORES 👁️
+### 2️⃣ Convidados = VISUALIZADORES 👁️
+
 - Veem tudo em tempo real
 - Seguem todas as alterações do HOST
-- Perfeito para banda acompanhando
+- Entram com código de seis dígitos e apelido, sem criar conta
 
 ### 3️⃣ Se o HOST Desconectar
+
 - O próximo dispositivo conectado vira novo HOST automaticamente
 - Sem perda de dados
 
 ## 🎵 Recursos Principais
 
 ### Repertório
+
 - ➕ Criar novas músicas
 - ✎️ Editar cifras existentes
 - 🎵 Incluir: título, artista, tom, BPM, cifra
 
 ### Cifras
+
 - Use formato: `[ACORDE]` para acordes
 - Ex: `[C]Letra aqui [G]mais letras`
-- Auto-colorização de acordes em verde neon
+- Acordes destacados em dourado sobre fundo claro
 
 ### Transposição
+
 - Deslize para transpor em semitons (-12 a +12)
 - Botões rápidos: -1, 0, +1
 - Suporta sustenidos (#) e bemóis (b)
 
 ### Capotraste
+
 - Ajuste de 0 a 12 trastes
 - Afeta visualização dos acordes
 - Sincronizado entre todos
 
 ### Auto-Scroll
+
 - Velocidade configurável (0-100)
 - Perfeito para ler enquanto toca
 - Ativa/desativa em tempo real
 
 ### Setlists
+
 - Organize músicas por ordem
 - Navegue entre músicas com os botões ◄ ANTERIOR / PRÓXIMO ►
 - Transposição zera ao mudar de música
 - Perfeito para planejar o setlist antes do show
 
-### Modo Palco ⚫
-- Tela preta, apenas a cifra aparece
-- Sem distrações durante o show
-- Todos os controles continuam funcionando
-- Um toque no botão volta ao normal
+### Modo Foco
+
+- Oculta as barras e deixa a cifra em destaque
+- Mantém a identidade clara e dourada
+- A barra móvel oferece transposição, auto-scroll e acesso ao repertório
+- Um toque em “Mostrar controles” restaura a interface
 
 ## 🎨 Design
 
-| Elemento | Cor | Código |
-|----------|-----|--------|
-| Primário | Verde Neon | #00ff41 |
-| Destaque | Âmbar | #ffa500 |
-| Fundo | Preto Profundo | #0a0e27 |
-| Texto | Cinza Claro | #e0e0e0 |
+| Elemento   | Cor              | Código   |
+| ---------- | ---------------- | -------- |
+| Elemento   | Cor              | Código   |
+| ---------- | -----            | -------- |
+| Primário   | Dourado elegante | #c89b3c  |
+| Destaque   | Dourado claro    | #d4af37  |
+| Fundo      | Branco gelo      | #f5f5f7  |
+| Texto      | Cinza escuro     | #1d1d1f  |
 
 Tipografia: **Courier New** (monospace) - perfeita para cifras!
 
@@ -194,9 +254,11 @@ cifrahub/
 - **Porta**: 3000 (pode mudar em server.js)
 
 ### Firewall
+
 Se a conexão não funcionar, permita a porta 3000:
 
 **Windows:**
+
 ```powershell
 netsh advfirewall firewall add rule name="CifraHub" dir=in action=allow protocol=tcp localport=3000
 ```
@@ -207,6 +269,7 @@ Vá em: System Preferences > Security & Privacy > Firewall
 ## 🚨 Troubleshooting
 
 ### Não consegue conectar?
+
 1. Confirme que estão na mesma rede Wi-Fi
 2. Desligue VPN/proxy no celular
 3. Verifique firewall do PC
@@ -214,12 +277,14 @@ Vá em: System Preferences > Security & Privacy > Firewall
 5. Reinicie o servidor: `npm start`
 
 ### App não sincroniza?
+
 1. Abra o console (F12) e procure por erros
 2. Verifique se o servidor está rodando
 3. Confirme o endereço IP está correto
 4. Tente recarregar a página (F5)
 
 ### Slow/Lag?
+
 1. Reduz número de dispositivos conectados
 2. Fecha outras abas pesadas no navegador
 3. Verifica qualidade da rede Wi-Fi
@@ -229,8 +294,8 @@ Vá em: System Preferences > Security & Privacy > Firewall
 
 ```json
 {
-  "express": "^4.18.2",    // Servidor HTTP
-  "ws": "^8.13.0"          // WebSocket
+  "express": "^4.18.2", // Servidor HTTP
+  "ws": "^8.13.0" // WebSocket
 }
 ```
 

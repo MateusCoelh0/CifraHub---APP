@@ -3,7 +3,7 @@ services:
     name: cifrahub
     runtime: node
     plan: free
-    buildCommand: npm ci
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /
     envVars:

@@ -27,12 +27,32 @@ export type ClientMessage =
 
 /** União tipada das notificações emitidas pelo servidor aos clientes. */
 export type ServerMessage =
-  | { type: "init"; state: SessionState; clientId: string; isHost: boolean; clientsCount: number }
+  | {
+      type: "init";
+      state: SessionState;
+      clientId: string;
+      isHost: boolean;
+      clientsCount: number;
+      hostToken?: string;
+    }
   | { type: "clientsUpdate"; clientsCount: number }
-  | { type: "newHost"; clientId: string }
+  | { type: "newHost"; clientId: string; hostToken?: string }
   | { type: "stateSync"; state: SessionState; clientsCount: number }
-  | { type: "songSelected"; song: Song | null; index: number | null }
-  | { type: "setlistSelected"; setlist: Setlist }
+  | {
+      type: "songSelected";
+      song: Song | null;
+      index: number | null;
+      transpose?: number;
+      capotraste?: number;
+    }
+  | {
+      type: "setlistSelected";
+      setlist: Setlist;
+      song?: Song | null;
+      index?: number | null;
+      transpose?: number;
+      capotraste?: number;
+    }
   | { type: "transposeUpdated"; transpose: number }
   | { type: "capotrasteUpdated"; capotraste: number }
   | { type: "autoScrollUpdated"; speed: number; isActive: boolean }
@@ -42,4 +62,5 @@ export type ServerMessage =
   | { type: "songUpdated"; song: Song }
   | { type: "songDeleted"; id: string; setlists: Setlist[] }
   | { type: "setlistCreated" | "setlistUpdated"; setlist: Setlist }
-  | { type: "setlistDeleted"; id: string };
+  | { type: "setlistDeleted"; id: string }
+  | { type: "operationError"; message: string };

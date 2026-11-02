@@ -86,19 +86,25 @@ export class WebSocketSessionService {
   ): Promise<void> {
     try {
       const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
-      if ([...url.searchParams.keys()].some((key) => key !== "sessionId" && key !== "token")) {
+      if (
+        [...url.searchParams.keys()].some(
+          (key) => key !== "sessionId" && key !== "token" && key !== "code" && key !== "hostToken",
+        )
+      ) {
         socket.close(1008, "Parâmetros WebSocket não permitidos");
         return;
       }
       const sessionId = url.searchParams.get("sessionId");
+      const sessionCode = url.searchParams.get("code");
       const access = await this.resolveAccess(
         url.searchParams.get("token") ?? this.readBearer(request),
         sessionId,
+        sessionCode,
         socket,
       );
       if (!access) return;
       const manager = await this.managerFor(access.bandId);
-      const session = manager.resolveSession(sessionId);
+      const session = manager.resolveSession(access.sessionId);
       this.activeSessions.set(session.id, session);
       const client: ClientRecord = {
         id: this.createClientId(),
@@ -107,13 +113,19 @@ export class WebSocketSessionService {
         bandRole: access.role,
         send: (message) => this.send(socket, message as ServerMessage),
       };
-      manager.connect(session, client, access.role === "ADMIN" || access.role === "MEMBER");
+      manager.connect(
+        session,
+        client,
+        access.role === "ADMIN" || access.role === "MEMBER",
+        url.searchParams.get("hostToken"),
+      );
       this.send(socket, {
         type: "init",
         state: session.state,
         clientId: client.id,
         isHost: client.isHost,
         clientsCount: session.clients.size,
+        ...(client.isHost && session.hostToken ? { hostToken: session.hostToken } : {}),
       });
       manager.broadcast(session, { type: "clientsUpdate", clientsCount: session.clients.size });
       const context: ConnectionContext = {
@@ -140,8 +152,23 @@ export class WebSocketSessionService {
   private async resolveAccess(
     token: string | null,
     sessionId: string | null,
+    sessionCode: string | null,
     socket: WebSocket,
-  ): Promise<{ bandId: string; role: "ADMIN" | "MEMBER" | "VIEWER" | null } | null> {
+  ): Promise<{
+    bandId: string;
+    role: "ADMIN" | "MEMBER" | "VIEWER" | null;
+    sessionId: string | null;
+  } | null> {
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if ((sessionId && !uuidPattern.test(sessionId)) || (sessionId && sessionCode)) {
+      socket.close(1008, "Identificador de sessão inválido");
+      return null;
+    }
+    if (sessionCode && !/^\d{6}$/.test(sessionCode)) {
+      socket.close(1008, "Código de sessão inválido");
+      return null;
+    }
     let userId: string | null = null;
     if (token) {
       const payload = verifyToken(token);
@@ -153,16 +180,20 @@ export class WebSocketSessionService {
       userId = user.id;
     }
     let bandId = this.defaultLibrary.bandId;
-    if (sessionId) {
+    let resolvedSessionId: string | null = null;
+    if (sessionId || sessionCode) {
       const row = await pool!.query(
-        "SELECT band_id::text FROM sessions WHERE id=$1 AND status='LIVE'",
-        [sessionId],
+        `SELECT id::text, band_id::text FROM sessions
+         WHERE status='LIVE' AND (($1::uuid IS NOT NULL AND id=$1::uuid)
+         OR ($2::char(6) IS NOT NULL AND session_code=$2))`,
+        [sessionId, sessionCode],
       );
       if (!row.rowCount) {
         socket.close(1008, "Sessão não encontrada ou encerrada");
         return null;
       }
       bandId = row.rows[0].band_id;
+      resolvedSessionId = row.rows[0].id;
     }
     let role: "ADMIN" | "MEMBER" | "VIEWER" | null = null;
     if (userId) {
@@ -176,7 +207,7 @@ export class WebSocketSessionService {
       }
       role = membership.rows[0].role;
     }
-    return { bandId, role };
+    return { bandId, role, sessionId: resolvedSessionId };
   }
 
   private async managerFor(bandId: string): Promise<SessionManager> {
@@ -216,6 +247,10 @@ export class WebSocketSessionService {
       await this.handleLibraryMessage(context, message);
     } catch (error) {
       console.error("Falha processando mensagem WebSocket:", error);
+      this.send(context.socket, {
+        type: "operationError",
+        message: "Não foi possível concluir a alteração. Verifique sua conexão e tente novamente.",
+      });
     }
   }
 
@@ -299,9 +334,10 @@ export class WebSocketSessionService {
     session.state.currentSong = song;
     session.state.currentSongIndex = index;
     session.state.transpose = 0;
+    session.state.capotraste = 0;
     session.state.scrollPosition = 0;
     session.state.isAutoScrolling = false;
-    this.broadcast(session, { type: "songSelected", song, index });
+    this.broadcast(session, { type: "songSelected", song, index, transpose: 0, capotraste: 0 });
   }
 
   private selectSetlist(session: ManagedSession, setlist: Setlist): void {
@@ -310,7 +346,17 @@ export class WebSocketSessionService {
     session.state.currentSong =
       session.state.songs.find((song) => song.id === setlist.songs[0]) ?? null;
     session.state.transpose = 0;
-    this.broadcast(session, { type: "setlistSelected", setlist });
+    session.state.capotraste = 0;
+    session.state.scrollPosition = 0;
+    session.state.isAutoScrolling = false;
+    this.broadcast(session, {
+      type: "setlistSelected",
+      setlist,
+      song: session.state.currentSong,
+      index: session.state.currentSongIndex,
+      transpose: 0,
+      capotraste: 0,
+    });
   }
 
   private navigateSong(session: ManagedSession, direction: "nextSong" | "previousSong"): void {
@@ -322,8 +368,15 @@ export class WebSocketSessionService {
     state.currentSong =
       state.songs.find((song) => song.id === state.currentSetlist?.songs[index]) ?? null;
     state.transpose = 0;
+    state.capotraste = 0;
     state.scrollPosition = 0;
-    this.broadcast(session, { type: "songSelected", song: state.currentSong, index });
+    this.broadcast(session, {
+      type: "songSelected",
+      song: state.currentSong,
+      index,
+      transpose: 0,
+      capotraste: 0,
+    });
   }
 
   private async handleLibraryMessage(

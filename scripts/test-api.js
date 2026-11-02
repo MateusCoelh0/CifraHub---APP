@@ -64,7 +64,11 @@ let userBId;
 let bandAId;
 try {
   const root = await fetch(`${baseUrl}/`);
-  assert(root.status === 200, "A rota legada / não entregou a interface.");
+  const rootHtml = await root.text();
+  assert(
+    root.status === 200 && rootHtml.includes("/css/theme.css"),
+    "A rota / não entregou a nova interface modular.",
+  );
   const regA = await request("/api/auth/register", "POST", null, {
     name: "User A",
     email: emailA,
@@ -118,11 +122,11 @@ try {
   );
   const session = await request(`/api/bands/${bandAId}/sessions`, "POST", tokenA, {});
   assert(
-    session.status === 201 && session.data.bandId === bandAId,
+    session.status === 201 && session.data.bandId === bandAId && /^\d{6}$/.test(session.data.code),
     "Criação de sessão na Banda 1 falhou.",
   );
   const guest = await connectSocket(
-    `ws://localhost:${new URL(baseUrl).port || "80"}/?sessionId=${session.data.id}`,
+    `ws://localhost:${new URL(baseUrl).port || "80"}/?code=${session.data.code}`,
   );
   const guestInit = await guest.wait("init");
   assert(!guestInit.isHost, "Convidado deveria entrar como visualizador sem login.");

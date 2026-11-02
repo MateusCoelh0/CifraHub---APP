@@ -9,10 +9,11 @@
     "start:legacy": "node server.js",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "lint": "eslint src scripts",
-    "format:check": "prettier --check src scripts",
+    "lint": "eslint src scripts public/js",
+    "format:check": "prettier --check src scripts public",
     "test:security": "tsx scripts/security-check.ts",
     "db:set-owner-password": "tsx scripts/seed-owner.ts",
+    "db:migrate-session-codes": "node scripts/migrate-session-codes.js",
     "test:api": "node scripts/test-api.js",
     "db:check": "node scripts/check-db.js",
     "db:import-legacy": "node scripts/import-legacy-data.js"
@@ -27,30 +28,31 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.4.7",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
     "express-async-errors": "^3.1.1",
     "express-rate-limit": "^7.5.0",
-    "express": "^4.18.2",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.1",
-    "zod": "^3.24.1",
-    "ws": "^8.13.0"
+    "ws": "^8.13.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.2",
     "@types/pg": "^8.11.10",
     "@types/ws": "^8.5.13",
-    "tsx": "^4.19.2",
-    "typescript-eslint": "^8.18.1",
     "eslint": "^9.17.0",
+    "globals": "^17.14.0",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2"
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1"
   }
 }

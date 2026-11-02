@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { createInitialSessionState, type SessionState } from "../domain/entities.js";
 
 /** Informações de uma conexão vinculada a uma sala de palco. */
@@ -16,6 +17,9 @@ export interface ManagedSession {
   state: SessionState;
   clients: Map<string, ClientRecord>;
   hostId: string | null;
+  hostToken: string | null;
+  hostReclaimUntil: number;
+  hostGraceTimer: NodeJS.Timeout | null;
 }
 
 export class SessionManager {
@@ -41,6 +45,9 @@ export class SessionManager {
         state: createInitialSessionState(this.songs, this.setlists),
         clients: new Map(),
         hostId: null,
+        hostToken: null,
+        hostReclaimUntil: 0,
+        hostGraceTimer: null,
       };
       this.sessions.set(id, session);
     }
@@ -52,9 +59,24 @@ export class SessionManager {
    * @param client Conexão WebSocket associada ao usuário ou convidado.
    * @param canControl Indica se o papel do integrante permite controlar o palco.
    */
-  connect(session: ManagedSession, client: ClientRecord, canControl = false): void {
+  connect(
+    session: ManagedSession,
+    client: ClientRecord,
+    canControl = false,
+    hostToken?: string | null,
+  ): void {
     session.clients.set(client.id, client);
-    if (!session.hostId && canControl) {
+    const reclaimingHost = Boolean(
+      hostToken && session.hostToken && hostToken === session.hostToken,
+    );
+    if (reclaimingHost && canControl) {
+      if (session.hostGraceTimer) clearTimeout(session.hostGraceTimer);
+      session.hostGraceTimer = null;
+      session.hostReclaimUntil = 0;
+      session.hostId = client.id;
+      client.isHost = true;
+    } else if (!session.hostId && canControl && Date.now() >= session.hostReclaimUntil) {
+      session.hostToken = randomUUID();
       session.hostId = client.id;
       client.isHost = true;
     }
@@ -68,12 +90,29 @@ export class SessionManager {
   disconnect(session: ManagedSession, clientId: string): string | null {
     session.clients.delete(clientId);
     if (session.hostId !== clientId) return null;
-    const next = [...session.clients.values()].find(
-      (client) => client.bandRole === "ADMIN" || client.bandRole === "MEMBER",
-    );
-    session.hostId = next?.id ?? null;
-    if (next) next.isHost = true;
-    return session.hostId;
+    session.hostId = null;
+    session.hostReclaimUntil = Date.now() + 10_000;
+    if (session.hostGraceTimer) clearTimeout(session.hostGraceTimer);
+    session.hostGraceTimer = setTimeout(() => {
+      if (session.hostId) return;
+      const next = [...session.clients.values()].find(
+        (client) => client.bandRole === "ADMIN" || client.bandRole === "MEMBER",
+      );
+      if (!next) {
+        session.hostReclaimUntil = 0;
+        session.hostToken = null;
+        return;
+      }
+      session.hostToken = randomUUID();
+      session.hostId = next.id;
+      next.isHost = true;
+      this.broadcast(session, {
+        type: "newHost",
+        clientId: next.id,
+        hostToken: session.hostToken ?? undefined,
+      });
+    }, 10_000);
+    return null;
   }
 
   /** Envia uma mensagem apenas aos dispositivos conectados à mesma sala.
