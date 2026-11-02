@@ -8,6 +8,9 @@
     if (context.sessionId) url.searchParams.set("sessionId", context.sessionId);
     else if (context.code) url.searchParams.set("code", context.code);
     if (context.token) url.searchParams.set("token", context.token);
+    const roomKey = context.sessionId ?? context.code ?? "default";
+    const hostToken = localStorage.getItem(`cifrahub_hostToken_${roomKey}`);
+    if (hostToken) url.searchParams.set("hostToken", hostToken);
     return url.toString();
   }
 

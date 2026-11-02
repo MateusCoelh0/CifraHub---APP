@@ -54,11 +54,24 @@ export const songSchema = z
   })
   .strict();
 export const sessionSchema = z.object({ playlistId: z.string().uuid().optional() }).strict();
+export const playlistSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: z.string().trim().min(1).max(200),
+    songs: z.array(z.string().uuid()).max(500),
+  })
+  .strict();
 export const emptyQuerySchema = z.object({}).strict();
 export const bandIdParamsSchema = z.object({ bandId: z.string().uuid() }).passthrough();
 export const memberParamsSchema = z
   .object({ bandId: z.string().uuid(), userId: z.string().uuid() })
   .passthrough();
+export const songParamsSchema = z
+  .object({ bandId: z.string().uuid(), songId: z.string().uuid() })
+  .strict();
+export const playlistParamsSchema = z
+  .object({ bandId: z.string().uuid(), playlistId: z.string().uuid() })
+  .strict();
 
 /** Converte erros do Zod em uma mensagem segura com os campos inválidos.
  * @param error Erro produzido pela validação do schema.

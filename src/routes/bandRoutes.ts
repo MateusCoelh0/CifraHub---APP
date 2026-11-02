@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../auth/authMiddleware.js";
+import type { Song } from "../domain/entities.js";
 import { validateRequest } from "../security/validateRequest.js";
 import {
   bandIdParamsSchema,
@@ -8,12 +9,19 @@ import {
   memberSchema,
   sessionSchema,
   songSchema,
+  playlistSchema,
+  songParamsSchema,
+  playlistParamsSchema,
 } from "../security/schemas.js";
 import {
   addMember,
   createBand,
   createLiveSession,
   createSong,
+  editSong,
+  deleteSong,
+  saveBandPlaylist,
+  deleteBandPlaylist,
   listBands,
   listMembers,
   listPlaylists,
@@ -75,6 +83,78 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
         }
         await addMember(req.params.bandId, req.user!.id, email, role!);
         res.status(201).json({ ok: true });
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
+  router.put(
+    "/:bandId/songs/:songId",
+    validateRequest("params", songParamsSchema),
+    validateRequest("body", songSchema),
+    async (req, res) => {
+      try {
+        await editSong(req.params.bandId, req.user!.id, {
+          ...(req.body as Omit<Song, "id">),
+          id: req.params.songId,
+        });
+        res.json({ success: true });
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
+  router.delete(
+    "/:bandId/songs/:songId",
+    validateRequest("params", songParamsSchema),
+    async (req, res) => {
+      try {
+        await deleteSong(req.params.bandId, req.user!.id, req.params.songId);
+        res.status(204).end();
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
+  router.post(
+    "/:bandId/playlists",
+    validateRequest("params", bandIdParamsSchema),
+    validateRequest("body", playlistSchema),
+    async (req, res) => {
+      try {
+        const playlist = await saveBandPlaylist(req.params.bandId, req.user!.id, {
+          ...(req.body as { name: string; songs: string[] }),
+          id: "",
+        });
+        res.status(201).json({ success: true, data: playlist });
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
+  router.put(
+    "/:bandId/playlists/:playlistId",
+    validateRequest("params", playlistParamsSchema),
+    validateRequest("body", playlistSchema),
+    async (req, res) => {
+      try {
+        const playlist = await saveBandPlaylist(req.params.bandId, req.user!.id, {
+          ...(req.body as { name: string; songs: string[] }),
+          id: req.params.playlistId,
+        });
+        res.json({ success: true, data: playlist });
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
+  router.delete(
+    "/:bandId/playlists/:playlistId",
+    validateRequest("params", playlistParamsSchema),
+    async (req, res) => {
+      try {
+        await deleteBandPlaylist(req.params.bandId, req.user!.id, req.params.playlistId);
+        res.status(204).end();
       } catch (error) {
         sendError(res, error);
       }

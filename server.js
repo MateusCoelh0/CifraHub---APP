@@ -5,6 +5,7 @@ import { WebSocketServer } from 'ws';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import { randomUUID } from 'node:crypto';
 import { pool, loadBandLibrary, insertSong, updateSong, removeSong, savePlaylist, removePlaylist } from './src/db/repository.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,6 +35,9 @@ let appState = {
 };
 
 let hostClient = null;
+let hostToken = null;
+let hostReclaimUntil = 0;
+let hostGraceTimer = null;
 const connectedClients = new Map();
 let activeBandId = null;
 
@@ -117,7 +121,9 @@ app.get('/', (req, res) => {
 });
 
 // WebSocket
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, request) => {
+  const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+  const reconnectToken = url.searchParams.get('hostToken');
   const clientId = Date.now() + Math.random().toString(36);
   connectedClients.set(clientId, {
     id: clientId,
@@ -127,9 +133,16 @@ wss.on('connection', (ws) => {
   });
 
   // Se não há host, este cliente vira host
-  if (!hostClient) {
+  if (reconnectToken && hostToken && reconnectToken === hostToken && Date.now() < hostReclaimUntil) {
+    if (hostGraceTimer) clearTimeout(hostGraceTimer);
+    hostGraceTimer = null;
+    hostReclaimUntil = 0;
+    hostClient = connectedClients.get(clientId);
+    hostClient.isHost = true;
+  } else if (!hostClient && Date.now() >= hostReclaimUntil) {
     hostClient = connectedClients.get(clientId);
     connectedClients.get(clientId).isHost = true;
+    hostToken = randomUUID();
     console.log(`🎸 HOST conectado: ${clientId}`);
   } else {
     console.log(`👁️ Visualizador conectado: ${clientId}`);
@@ -141,6 +154,7 @@ wss.on('connection', (ws) => {
     state: appState,
     clientId: clientId,
     isHost: connectedClients.get(clientId).isHost,
+    ...(connectedClients.get(clientId).isHost ? { hostToken } : {}),
     clientsCount: connectedClients.size
   }));
 
@@ -170,12 +184,15 @@ wss.on('connection', (ws) => {
             appState.currentSong = message.song;
             appState.currentSongIndex = message.index;
             appState.transpose = 0;
+            appState.capotraste = 0;
             appState.scrollPosition = 0;
             appState.isAutoScrolling = false;
             broadcast({
               type: 'songSelected',
               song: message.song,
-              index: message.index
+              index: message.index,
+              transpose: 0,
+              capotraste: 0
             });
           }
           break;
@@ -184,13 +201,20 @@ wss.on('connection', (ws) => {
           if (sender.isHost) {
             appState.currentSetlist = message.setlist;
             appState.currentSongIndex = 0;
-            if (message.setlist.songs.length > 0) {
-              appState.currentSong = appState.songs.find(s => s.id === message.setlist.songs[0]);
-              appState.transpose = 0;
-            }
+            appState.currentSong = message.setlist.songs.length > 0
+              ? appState.songs.find(s => s.id === message.setlist.songs[0]) || null
+              : null;
+            appState.transpose = 0;
+            appState.capotraste = 0;
+            appState.scrollPosition = 0;
+            appState.isAutoScrolling = false;
             broadcast({
               type: 'setlistSelected',
-              setlist: message.setlist
+              setlist: message.setlist,
+              song: appState.currentSong,
+              index: appState.currentSongIndex,
+              transpose: 0,
+              capotraste: 0
             });
           }
           break;
@@ -254,11 +278,13 @@ wss.on('connection', (ws) => {
               appState.currentSongIndex++;
               appState.currentSong = appState.songs.find(s => s.id === songs[appState.currentSongIndex]);
               appState.transpose = 0;
+              appState.capotraste = 0;
               appState.scrollPosition = 0;
               broadcast({
                 type: 'songSelected',
                 song: appState.currentSong,
-                index: appState.currentSongIndex
+                index: appState.currentSongIndex,
+                capotraste: 0
               });
             }
           }
@@ -270,11 +296,13 @@ wss.on('connection', (ws) => {
               appState.currentSongIndex--;
               appState.currentSong = appState.songs.find(s => s.id === appState.currentSetlist.songs[appState.currentSongIndex]);
               appState.transpose = 0;
+              appState.capotraste = 0;
               appState.scrollPosition = 0;
               broadcast({
                 type: 'songSelected',
                 song: appState.currentSong,
-                index: appState.currentSongIndex
+                index: appState.currentSongIndex,
+                capotraste: 0
               });
             }
           }
@@ -411,16 +439,19 @@ wss.on('connection', (ws) => {
       // Se era o host, novo host é escolhido
       if (client.isHost) {
         hostClient = null;
-        const remaining = Array.from(connectedClients.values());
-        if (remaining.length > 0) {
-          hostClient = remaining[0];
+        hostReclaimUntil = Date.now() + 10000;
+        if (hostGraceTimer) clearTimeout(hostGraceTimer);
+        hostGraceTimer = setTimeout(() => {
+          if (hostClient) return;
+          const nextHost = Array.from(connectedClients.values())[0];
+          hostReclaimUntil = 0;
+          if (!nextHost) { hostToken = null; return; }
+          hostClient = nextHost;
           hostClient.isHost = true;
-          console.log(`🎸 Novo HOST: ${hostClient.id}`);
-          broadcast({
-            type: 'newHost',
-            clientId: hostClient.id
-          });
-        }
+          hostToken = randomUUID();
+          broadcast({ type: 'newHost', clientId: nextHost.id, hostToken });
+          broadcast({ type: 'clientsUpdate', clientsCount: connectedClients.size });
+        }, 10000);
       }
 
       broadcast({

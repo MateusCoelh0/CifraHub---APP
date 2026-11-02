@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { pool } from "../db/repository.js";
+import { pool, removePlaylist, removeSong, savePlaylist, updateSong } from "../db/repository.js";
 import type { Setlist, Song } from "../domain/entities.js";
 import type { AuthUser } from "../auth/authService.js";
 import type { Pool } from "pg";
@@ -238,6 +238,57 @@ export async function createSong(
     [bandId, song.title, song.artist, song.key, song.tempo, song.cifra],
   );
   return rows[0];
+}
+
+/** Atualiza música da banda após conferir papel editável e propriedade.
+ * @param bandId Banda proprietária.
+ * @param userId Integrante solicitante.
+ * @param song Música com identificador e campos atualizados.
+ */
+export async function editSong(bandId: string, userId: string, song: Song): Promise<void> {
+  await requireBandRole(bandId, userId, editableRoles);
+  if (!(await updateSong(bandId, song)))
+    throw Object.assign(new Error("Música não encontrada."), { status: 404 });
+}
+
+/** Exclui música da banda após conferir papel editável.
+ * @param bandId Banda proprietária.
+ * @param userId Integrante solicitante.
+ * @param songId Identificador da música.
+ */
+export async function deleteSong(bandId: string, userId: string, songId: string): Promise<void> {
+  await requireBandRole(bandId, userId, editableRoles);
+  if (!(await removeSong(bandId, songId)))
+    throw Object.assign(new Error("Música não encontrada."), { status: 404 });
+}
+
+/** Cria/atualiza playlist e músicas ordenadas depois de validar permissões.
+ * @param bandId Banda proprietária.
+ * @param userId Integrante solicitante.
+ * @param playlist Dados da playlist.
+ * @returns Playlist persistida.
+ */
+export async function saveBandPlaylist(
+  bandId: string,
+  userId: string,
+  playlist: Setlist,
+): Promise<Setlist> {
+  await requireBandRole(bandId, userId, editableRoles);
+  return savePlaylist(bandId, playlist);
+}
+
+/** Remove playlist da banda após conferir papel editável.
+ * @param bandId Banda proprietária.
+ * @param userId Integrante solicitante.
+ * @param playlistId Identificador da playlist.
+ */
+export async function deleteBandPlaylist(
+  bandId: string,
+  userId: string,
+  playlistId: string,
+): Promise<void> {
+  await requireBandRole(bandId, userId, editableRoles);
+  await removePlaylist(bandId, playlistId);
 }
 
 /** Cria sessão ao vivo vinculada à banda e, opcionalmente, à playlist da mesma banda.

@@ -426,8 +426,15 @@
 
     .header-controls {
       display: flex;
+      flex-wrap: wrap;
       gap: 6px;
     }
+    .compact-actions { display: none; gap: 6px; }
+
+    .song-meta.bpm-pulse { animation: bpm-pulse var(--bpm-duration, 1s) ease-in-out infinite; }
+    @keyframes bpm-pulse { 50% { opacity: .58; } }
+    #songsList { min-width: 0; overflow-x: hidden; }
+    .repertoire-search { width: calc(100% - 20px); min-height: 44px; margin: 6px 10px; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 12px; background: rgba(255,255,255,.85); color: var(--text-primary); }
 
     .btn {
       padding: 8px 14px;
@@ -931,11 +938,19 @@
     /* ═══════════════ RESPONSIVE ═══════════════ */
     @media (max-width: 1200px) {
       .container {
-        grid-template-columns: 1fr 250px;
+        grid-template-columns: 1fr;
       }
       .sidebar {
         display: none;
       }
+      .compact-actions { display: flex; flex-wrap: wrap; }
+      .sidebar.drawer-open, .panel-right.drawer-open {
+        position: fixed; z-index: 80; right: 12px; bottom: 12px; left: 12px;
+        display: flex !important; width: auto; max-height: 80dvh; overflow: auto;
+        padding: 18px; border-radius: 24px; background: rgba(255,255,255,.94);
+        box-shadow: 0 18px 60px rgba(20,20,24,.22); backdrop-filter: blur(24px);
+      }
+      body.drawer-visible::after { content: ''; position: fixed; z-index: 70; inset: 0; background: rgba(29,29,31,.22); }
     }
 
     @media (max-width: 768px) {
@@ -947,6 +962,8 @@
       .panel-right {
         display: none;
       }
+      .compact-actions { width: 100%; justify-content: space-between; }
+      .compact-actions button { flex: 1; justify-content: center; }
       .header {
         flex-direction: column;
         gap: 10px;
@@ -995,6 +1012,7 @@
           <button class="mini-btn accent" id="addToSetlistBtn" onclick="showAddToSetlistModal()" style="display:none;" title="Adicionar músicas à setlist">+</button>
           <button class="mini-btn" id="clearSetlistFilterBtn" onclick="clearSetlistFilter()" style="display:none;" title="Ver todas as músicas">✕</button>
         </div>
+        <input id="searchInput" class="repertoire-search" type="search" placeholder="Buscar música ou artista..." aria-label="Buscar música ou artista no repertório">
         <div id="songsList"></div>
       </div>
 
@@ -1011,6 +1029,10 @@
         <div class="song-header">
           <div class="song-title-main" id="currentSongTitle">Selecione uma música</div>
           <div class="song-meta" id="currentSongMeta">Toque para começar</div>
+        </div>
+        <div class="compact-actions">
+          <button class="btn" type="button" onclick="toggleLegacyPanel('sidebar')">📚 Repertório</button>
+          <button class="btn" type="button" onclick="toggleLegacyPanel('panel-right')">🎛️ Controles</button>
         </div>
         <div class="header-controls">
           <button class="btn" id="prevBtn" onclick="previousSong()" disabled>◀ Anterior</button>
@@ -1285,15 +1307,45 @@
     }
 
     function setupEventListeners() {
+      document.getElementById('searchInput')?.addEventListener('input', renderSongs);
+      const stageScroller = document.getElementById('cifraContainer');
+      let lastSentScroll = -1;
+      let lastScrollSentAt = 0;
+      stageScroller?.addEventListener('scroll', () => {
+        const now = Date.now();
+        if (!appState.isHost || now - lastScrollSentAt < 100) return;
+        const position = stageScroller.scrollTop;
+        if (Math.abs(position - lastSentScroll) < 2) return;
+        lastScrollSentAt = now;
+        lastSentScroll = position;
+        sendMessage({ type: 'scroll', position });
+      }, { passive: true });
       window.addEventListener('beforeunload', () => {
         if (appState.ws) appState.ws.close();
       });
+      document.addEventListener('click', event => {
+        if (!document.body.classList.contains('drawer-visible')) return;
+        if (event.target.closest('.sidebar.drawer-open, .panel-right.drawer-open, .compact-actions')) return;
+        document.querySelectorAll('.drawer-open').forEach(panel => panel.classList.remove('drawer-open'));
+        document.body.classList.remove('drawer-visible');
+      });
+    }
+
+    function toggleLegacyPanel(panelName) {
+      const target = document.querySelector(`.${panelName}`);
+      const wasOpen = target.classList.contains('drawer-open');
+      document.querySelectorAll('.sidebar, .panel-right').forEach(panel => panel.classList.remove('drawer-open'));
+      target.classList.toggle('drawer-open', !wasOpen);
+      document.body.classList.toggle('drawer-visible', !wasOpen);
     }
 
     // ═══════════════════════════ WEBSOCKET ═══════════════════════════
     function connectWebSocket() {
       try {
-        appState.ws = new WebSocket(CONFIG.WS_URL);
+        const socketUrl = new URL(CONFIG.WS_URL);
+        const savedHostToken = localStorage.getItem('cifrahub_hostToken_default');
+        if (savedHostToken) socketUrl.searchParams.set('hostToken', savedHostToken);
+        appState.ws = new WebSocket(socketUrl);
 
         appState.ws.onopen = () => {
           console.log('✅ Conectado ao servidor');
@@ -1327,6 +1379,9 @@
         case 'init':
           appState.clientId = message.clientId;
           appState.isHost = message.isHost;
+          if (message.isHost && message.hostToken) {
+            localStorage.setItem('cifrahub_hostToken_default', message.hostToken);
+          }
           appState.songs = message.state.songs;
           appState.setlists = message.state.setlists;
           appState.clientsCount = message.clientsCount;
@@ -1351,6 +1406,7 @@
         case 'newHost':
           if (message.clientId === appState.clientId) {
             appState.isHost = true;
+            if (message.hostToken) localStorage.setItem('cifrahub_hostToken_default', message.hostToken);
             updateUI();
             showToast('🎸 Você é o novo Líder de Louvor!');
           }
@@ -1360,6 +1416,10 @@
           appState.currentSong = message.song;
           appState.currentSongIndex = message.index;
           appState.transpose = 0;
+          appState.capotraste = 0;
+          document.getElementById('transposeSlider').value = 0;
+          document.getElementById('capoSlider').value = 0;
+          document.getElementById('capoValue').textContent = '0';
           appState.scrollPosition = 0;
           appState.isAutoScrolling = false;
           updateUI();
@@ -1368,10 +1428,16 @@
 
         case 'setlistSelected':
           appState.currentSetlist = message.setlist;
-          appState.currentSongIndex = 0;
+          appState.currentSong = message.song || null;
+          appState.currentSongIndex = message.index ?? 0;
           appState.transpose = 0;
+          appState.capotraste = 0;
+          document.getElementById('transposeSlider').value = 0;
+          document.getElementById('capoSlider').value = 0;
+          document.getElementById('capoValue').textContent = '0';
           appState.scrollPosition = 0;
           updateUI();
+          renderCifra();
           break;
 
         case 'transposeUpdated':
@@ -1400,6 +1466,13 @@
           appState.stageMode = message.enabled;
           updateUI();
           break;
+
+        case 'scrollUpdated': {
+          const container = document.getElementById('cifraContainer');
+          if (container) container.scrollTop = message.position;
+          appState.scrollPosition = message.position;
+          break;
+        }
 
         case 'songAdded':
           appState.songs.push(message.song);
@@ -1886,6 +1959,13 @@
         }
       } else {
         songsToShow = appState.songs.map((s, i) => ({ song: s, index: i }));
+      }
+
+      const search = document.getElementById('searchInput')?.value.trim().toLocaleLowerCase('pt-BR');
+      if (search) {
+        songsToShow = songsToShow.filter(({ song }) =>
+          `${song.title} ${song.artist || ''}`.toLocaleLowerCase('pt-BR').includes(search)
+        );
       }
 
       if (songsToShow.length === 0) {

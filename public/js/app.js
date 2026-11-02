@@ -54,6 +54,23 @@ function setupEventListeners() {
   window.addEventListener("beforeunload", () => {
     if (appState.wsController) appState.wsController.stop();
   });
+  document.getElementById("searchInput")?.addEventListener("input", renderSongs);
+  const stageScroller = document.getElementById("cifraContainer");
+  let lastSentScroll = -1;
+  let lastScrollSentAt = 0;
+  stageScroller?.addEventListener(
+    "scroll",
+    () => {
+      const now = Date.now();
+      if (!appState.isHost || now - lastScrollSentAt < 100) return;
+      const position = stageScroller.scrollTop;
+      if (Math.abs(position - lastSentScroll) < 2) return;
+      lastScrollSentAt = now;
+      lastSentScroll = position;
+      sendMessage({ type: "scroll", position });
+    },
+    { passive: true },
+  );
 }
 
 // ═══════════════════════════ WEBSOCKET ═══════════════════════════
@@ -106,6 +123,11 @@ function handleMessage(message) {
     case "init":
       appState.clientId = message.clientId;
       appState.isHost = message.isHost;
+      if (message.isHost && message.hostToken) {
+        const connection = window.CifraHubContext.connection ?? {};
+        const roomKey = connection.sessionId ?? connection.code ?? "default";
+        localStorage.setItem(`cifrahub_hostToken_${roomKey}`, message.hostToken);
+      }
       appState.songs = message.state.songs;
       appState.setlists = message.state.setlists;
       appState.clientsCount = message.clientsCount;
@@ -130,6 +152,11 @@ function handleMessage(message) {
     case "newHost":
       if (message.clientId === appState.clientId) {
         appState.isHost = true;
+        if (message.hostToken) {
+          const connection = window.CifraHubContext.connection ?? {};
+          const roomKey = connection.sessionId ?? connection.code ?? "default";
+          localStorage.setItem(`cifrahub_hostToken_${roomKey}`, message.hostToken);
+        }
         updateUI();
         showToast("🎸 Você é o novo Líder de Louvor!");
       }
@@ -139,6 +166,9 @@ function handleMessage(message) {
       appState.currentSong = message.song;
       appState.currentSongIndex = message.index;
       appState.transpose = 0;
+      appState.capotraste = 0;
+      document.getElementById("transposeSlider").value = 0;
+      document.getElementById("capoSlider").value = 0;
       appState.scrollPosition = 0;
       appState.isAutoScrolling = false;
       updateUI();
@@ -147,10 +177,15 @@ function handleMessage(message) {
 
     case "setlistSelected":
       appState.currentSetlist = message.setlist;
-      appState.currentSongIndex = 0;
+      appState.currentSong = message.song ?? null;
+      appState.currentSongIndex = message.index ?? 0;
       appState.transpose = 0;
+      appState.capotraste = 0;
+      document.getElementById("transposeSlider").value = 0;
+      document.getElementById("capoSlider").value = 0;
       appState.scrollPosition = 0;
       updateUI();
+      renderCifra();
       break;
 
     case "transposeUpdated":
@@ -179,6 +214,13 @@ function handleMessage(message) {
       appState.stageMode = message.enabled;
       updateUI();
       break;
+
+    case "scrollUpdated": {
+      const container = document.getElementById("cifraContainer");
+      if (container) container.scrollTop = message.position;
+      appState.scrollPosition = message.position;
+      break;
+    }
 
     case "songAdded":
       appState.songs.push(message.song);
@@ -241,13 +283,20 @@ function handleMessage(message) {
       saveLocalData();
       showToast("🗑️ Música removida");
       break;
+
+    case "operationError":
+      showToast(message.message || "Não foi possível concluir a alteração.");
+      break;
   }
 }
 
 function sendMessage(message) {
   if (appState.ws && appState.ws.readyState === 1) {
     appState.ws.send(JSON.stringify(message));
+    return true;
   }
+  showToast("Sem conexão com a sessão. Reconecte antes de alterar o repertório.");
+  return false;
 }
 
 // ═══════════════════════════ SINCRONIZAÇÃO ═══════════════════════════
@@ -265,7 +314,11 @@ function syncState(state) {
 
 function canEditLibrary() {
   const role = window.CifraHubContext.activeBand?.role;
-  return (role === "ADMIN" || role === "MEMBER") && appState.ws?.readyState === WebSocket.OPEN;
+  return role === "ADMIN" || role === "MEMBER";
+}
+
+function activeBandId() {
+  return window.CifraHubContext.activeBand?.id;
 }
 
 // ═══════════════════════════ CONTROLES DO HOST ═══════════════════════════
@@ -289,6 +342,16 @@ function selectSetlist(id) {
   updateSongsHeader();
 
   if (appState.isHost) {
+    appState.currentSetlist = setlist;
+    appState.currentSongIndex = 0;
+    appState.currentSong = appState.songs.find((song) => song.id === setlist.songs[0]) ?? null;
+    appState.transpose = 0;
+    appState.capotraste = 0;
+    appState.scrollPosition = 0;
+    appState.isAutoScrolling = false;
+    appState.autoScrollSpeed = 0;
+    document.getElementById("cifraContainer").scrollTop = 0;
+    updateUI();
     sendMessage({
       type: "selectSetlist",
       setlist: setlist,
@@ -327,7 +390,11 @@ function updateSongsHeader() {
 
 function updateTranspose() {
   if (!appState.isHost) return;
-  const value = parseInt(document.getElementById("transposeSlider").value);
+  const value = Number.parseInt(document.getElementById("transposeSlider").value, 10) || 0;
+  appState.transpose = value;
+  document.getElementById("transposeValue").textContent = value > 0 ? `+${value}` : String(value);
+  renderCifra();
+  updateSongMeta();
   sendMessage({
     type: "transpose",
     value: value,
@@ -351,7 +418,11 @@ function transposeReset() {
 
 function updateCapo() {
   if (!appState.isHost) return;
-  const value = parseInt(document.getElementById("capoSlider").value);
+  const value = Number.parseInt(document.getElementById("capoSlider").value, 10) || 0;
+  appState.capotraste = value;
+  document.getElementById("capoValue").textContent = String(value);
+  renderCifra();
+  updateSongMeta();
   sendMessage({
     type: "capotraste",
     value: value,
@@ -360,7 +431,11 @@ function updateCapo() {
 
 function updateAutoScroll() {
   if (!appState.isHost) return;
-  const speed = parseInt(document.getElementById("scrollSlider").value);
+  const speed = Number.parseInt(document.getElementById("scrollSlider").value, 10) || 0;
+  appState.autoScrollSpeed = speed;
+  appState.isAutoScrolling = speed > 0;
+  document.getElementById("scrollSpeed").textContent = String(speed);
+  startAutoScroll();
   sendMessage({
     type: "autoScroll",
     speed: speed,
@@ -672,6 +747,13 @@ function renderSongs() {
     songsToShow = appState.songs.map((s, i) => ({ song: s, index: i }));
   }
 
+  const search = document.getElementById("searchInput")?.value.trim().toLocaleLowerCase("pt-BR");
+  if (search) {
+    songsToShow = songsToShow.filter(({ song }) =>
+      `${song.title} ${song.artist ?? ""}`.toLocaleLowerCase("pt-BR").includes(search),
+    );
+  }
+
   if (songsToShow.length === 0) {
     const empty = document.createElement("div");
     empty.style.cssText =
@@ -768,7 +850,7 @@ function renderSetlists() {
       e.stopPropagation();
       if (canEditLibrary()) {
         if (confirm(`Remover a setlist "${setlist.name}"?`)) {
-          sendMessage({ type: "deleteSetlist", id: setlist.id });
+          void deleteSetlist(setlist.id);
         }
       } else {
         showToast("⚠️ Seu papel não permite editar este repertório");
@@ -782,6 +864,22 @@ function renderSetlists() {
   });
 }
 
+async function deleteSetlist(id) {
+  try {
+    await window.CifraHubApi.request(`/api/bands/${activeBandId()}/playlists/${id}`, {
+      method: "DELETE",
+    });
+    appState.setlists = appState.setlists.filter((setlist) => setlist.id !== id);
+    if (appState.viewingSetlistId === id) appState.viewingSetlistId = null;
+    renderSetlists();
+    renderSongs();
+    updateSongsHeader();
+    showToast("Playlist removida.");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
 function updateUI() {
   if (appState.currentSong) {
     document.getElementById("currentSongTitle").textContent = appState.currentSong.title;
@@ -793,7 +891,16 @@ function updateUI() {
     }
     const artist = appState.currentSong.artist ? `${appState.currentSong.artist} • ` : "";
     const tempo = appState.currentSong.tempo ? ` • ${appState.currentSong.tempo} BPM` : "";
-    document.getElementById("currentSongMeta").textContent = `${artist}Tom: ${keyDisplay}${tempo}`;
+    const meta = document.getElementById("currentSongMeta");
+    meta.textContent = `${artist}Tom: ${keyDisplay}${tempo}`;
+    const bpm = Number(appState.currentSong.tempo) || 0;
+    meta.style.setProperty("--bpm-duration", bpm ? `${60 / bpm}s` : "1s");
+    meta.classList.toggle("bpm-pulse", bpm > 0);
+  } else {
+    document.getElementById("currentSongTitle").textContent = "Selecione uma música";
+    const meta = document.getElementById("currentSongMeta");
+    meta.textContent = "Escolha uma música no repertório";
+    meta.classList.remove("bpm-pulse");
   }
 
   document.getElementById("transposeSlider").value = appState.transpose;
@@ -875,6 +982,19 @@ function updateUI() {
   document.getElementById("transposeSlider").disabled = hostOnly;
   document.getElementById("capoSlider").disabled = hostOnly;
   document.getElementById("scrollSlider").disabled = hostOnly;
+}
+
+function updateSongMeta() {
+  if (!appState.currentSong) return;
+  const song = appState.currentSong;
+  const shift = (appState.transpose || 0) - (appState.capotraste || 0);
+  const originalKey = song.key || "";
+  const currentKey = shift ? transposeChord(originalKey, shift) : originalKey;
+  const keyLabel =
+    currentKey === originalKey ? currentKey : `${currentKey} (Original: ${originalKey})`;
+  const artist = song.artist ? `${song.artist} • ` : "";
+  const tempo = song.tempo ? ` • ${song.tempo} BPM` : "";
+  document.getElementById("currentSongMeta").textContent = `${artist}Tom: ${keyLabel}${tempo}`;
 }
 
 function updateConnectionStatus(status, color) {
@@ -1029,21 +1149,24 @@ function confirmAddToSetlist() {
     if (!newSongs.includes(id)) newSongs.push(id);
   });
 
-  sendMessage({
-    type: "updateSetlist",
-    setlist: {
-      id: setlist.id,
-      name: setlist.name,
-      songs: newSongs,
-    },
-  });
-
-  closeModal("addToSetlistModal");
-  showToast(`✅ ${checked.length} música(s) adicionada(s)`);
+  void window.CifraHubApi.request(`/api/bands/${activeBandId()}/playlists/${setlist.id}`, {
+    method: "PUT",
+    body: { id: setlist.id, name: setlist.name, songs: newSongs },
+  })
+    .then((result) => {
+      appState.setlists = appState.setlists.map((item) =>
+        item.id === setlist.id ? result.data : item,
+      );
+      renderSetlists();
+      renderSongs();
+      closeModal("addToSetlistModal");
+      showToast(`${checked.length} música(s) adicionada(s).`);
+    })
+    .catch((error) => showToast(error.message));
 }
 
 // ═══════════════════════════ REMOVER MÚSICA ═══════════════════════════
-function deleteCurrentSong() {
+async function deleteCurrentSong() {
   if (!canEditLibrary() || !appState.currentSong) {
     showToast("⚠️ Selecione uma música primeiro");
     return;
@@ -1055,10 +1178,25 @@ function deleteCurrentSong() {
   )
     return;
 
-  sendMessage({
-    type: "deleteSong",
-    id: appState.currentSong.id,
-  });
+  try {
+    await window.CifraHubApi.request(
+      `/api/bands/${activeBandId()}/songs/${appState.currentSong.id}`,
+      { method: "DELETE" },
+    );
+    appState.songs = appState.songs.filter((song) => song.id !== appState.currentSong.id);
+    appState.setlists = appState.setlists.map((list) => ({
+      ...list,
+      songs: list.songs.filter((id) => id !== appState.currentSong.id),
+    }));
+    appState.currentSong = null;
+    appState.currentSongIndex = null;
+    renderSongs();
+    renderSetlists();
+    updateUI();
+    showToast("Música removida.");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
 // ═══════════════════════════ IMPORTAÇÃO DE .TXT ═══════════════════════════
@@ -1075,7 +1213,7 @@ function handleTxtImport(event) {
   event.target.value = "";
 }
 
-function createSong(e) {
+async function createSong(e) {
   e.preventDefault();
   if (!canEditLibrary()) return;
 
@@ -1085,20 +1223,22 @@ function createSong(e) {
   const tempo = parseInt(document.getElementById("newSongTempo").value) || 120;
   const cifra = document.getElementById("newSongCifra").value;
 
-  sendMessage({
-    type: "addSong",
-    title,
-    artist,
-    key,
-    tempo,
-    cifra,
-  });
-
-  closeModal("createSongModal");
-  document.querySelector("#createSongModal form").reset();
+  try {
+    const result = await window.CifraHubApi.request(`/api/bands/${activeBandId()}/songs`, {
+      method: "POST",
+      body: { title, artist, key, tempo, cifra },
+    });
+    appState.songs.push(result.data ?? result);
+    renderSongs();
+    closeModal("createSongModal");
+    document.querySelector("#createSongModal form").reset();
+    showToast("Música adicionada.");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
-function updateSong(e) {
+async function updateSong(e) {
   e.preventDefault();
   if (!canEditLibrary() || !appState.currentSong) return;
 
@@ -1111,15 +1251,24 @@ function updateSong(e) {
     cifra: document.getElementById("editSongCifra").value,
   };
 
-  sendMessage({
-    type: "updateSong",
-    song,
-  });
-
-  closeModal("editSongModal");
+  try {
+    const { id, ...fields } = song;
+    await window.CifraHubApi.request(`/api/bands/${activeBandId()}/songs/${id}`, {
+      method: "PUT",
+      body: fields,
+    });
+    appState.songs = appState.songs.map((item) => (item.id === song.id ? song : item));
+    appState.currentSong = song;
+    renderSongs();
+    renderCifra();
+    closeModal("editSongModal");
+    showToast("Música atualizada.");
+  } catch (error) {
+    showToast(error.message);
+  }
 }
 
-function createSetlist(e) {
+async function createSetlist(e) {
   e.preventDefault();
   if (!canEditLibrary()) return;
 
@@ -1134,25 +1283,25 @@ function createSetlist(e) {
   );
   const songs = Array.from(checkboxes).map((cb) => cb.value);
 
-  if (appState.editingSetlist) {
-    sendMessage({
-      type: "updateSetlist",
-      setlist: {
-        id: appState.editingSetlist.id,
-        name,
-        songs,
-      },
+  try {
+    const existing = appState.editingSetlist;
+    const path = `/api/bands/${activeBandId()}/playlists${existing ? `/${existing.id}` : ""}`;
+    const result = await window.CifraHubApi.request(path, {
+      method: existing ? "PUT" : "POST",
+      body: { ...(existing ? { id: existing.id } : {}), name, songs },
     });
-  } else {
-    sendMessage({
-      type: "createSetlist",
-      name,
-      songs,
-    });
+    if (existing)
+      appState.setlists = appState.setlists.map((item) =>
+        item.id === existing.id ? result.data : item,
+      );
+    else appState.setlists.push(result.data);
+    appState.editingSetlist = null;
+    renderSetlists();
+    closeModal("createSetlistModal");
+    showToast(existing ? "Playlist atualizada." : "Playlist criada.");
+  } catch (error) {
+    showToast(error.message);
   }
-
-  appState.editingSetlist = null;
-  closeModal("createSetlistModal");
 }
 
 // ═══════════════════════════ ARMAZENAMENTO LOCAL ═══════════════════════════
