@@ -4,17 +4,17 @@ Um app web moderno para sincronizar cifras de músicas entre múltiplos disposit
 
 ## ⚡ Características
 
-✅ **Sincronização em Tempo Real** via WebSocket  
-✅ **Arquitetura HOST/CLIENT** - Primeiro device controla todos  
-✅ **Transposição Cromática** - Suporte a sustenidos e bemóis  
-✅ **Capotraste** - Ajuste de traste em tempo real  
-✅ **Auto-Scroll** - Rolagem automática configurável  
-✅ **Modo Palco** - Tela preta sem distrações  
-✅ **Repertório Ilimitado** - Criação e edição de cifras  
-✅ **Setlists** - Organize músicas para o show  
-✅ **Design Industrial** - Tema preto com neon (âmbar + verde)  
-✅ **Sem Framework** - HTML/CSS/JavaScript puro  
-✅ **Funciona Offline** - Roda em rede local sem internet  
+✅ **Sincronização em Tempo Real** via WebSocket
+✅ **Arquitetura HOST/CLIENT** - Primeiro device controla todos
+✅ **Transposição Cromática** - Suporte a sustenidos e bemóis
+✅ **Capotraste** - Ajuste de traste em tempo real
+✅ **Auto-Scroll** - Rolagem automática configurável
+✅ **Modo Palco** - Tela preta sem distrações
+✅ **Repertório Ilimitado** - Criação e edição de cifras
+✅ **Setlists** - Organize músicas para o show
+✅ **Design Industrial** - Tema preto com neon (âmbar + verde)
+✅ **Sem Framework** - HTML/CSS/JavaScript puro
+✅ **Funciona Offline** - Roda em rede local sem internet
 
 ## 🚀 Instalação Rápida
 
@@ -36,6 +36,17 @@ npm start
 ```
 
 O servidor rodará em `http://localhost:3000`
+
+## Publicar na internet (Render)
+
+O projeto inclui `render.yaml` para publicar o servidor Node.js com WebSocket no Render. O serviço usa HTTPS/WSS e o plano gratuito, adequado para testes.
+
+1. Envie este projeto para um repositório Git no GitHub ou GitLab. Inclua `package-lock.json` para que `npm ci` funcione no deploy.
+2. No Render, escolha **New > Blueprint** e conecte o repositório.
+3. O Render vai ler `render.yaml`; confirme a criação do serviço `cifrahub` no plano **Free**.
+4. Ao terminar, abra a URL `https://...onrender.com` fornecida pelo Render.
+
+No plano gratuito, o serviço pode dormir após 15 minutos sem tráfego e levar cerca de um minuto para acordar. O sistema de arquivos é temporário: músicas e setlists adicionados durante os testes podem ser apagados após reinicializações, suspensão ou novo deploy. O arquivo inicial de músicas (`data.json`) não é enviado pelo Git por estar no `.gitignore`; o app inicia com cifras de exemplo quando esse arquivo não existe.
 
 ### Android (Termux)
 
