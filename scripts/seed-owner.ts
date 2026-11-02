@@ -7,5 +7,5 @@ if (!email || !password) {
   console.error("Defina LEGACY_OWNER_EMAIL e OWNER_INITIAL_PASSWORD no .env.");
   process.exit(1);
 }
-await seedOwnerPassword(email,password);
+await seedOwnerPassword(email, password);
 console.log(`Senha inicial atualizada para a conta administradora ${email}.`);
