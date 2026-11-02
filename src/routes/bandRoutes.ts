@@ -16,6 +16,7 @@ import {
   createSong,
   listBands,
   listMembers,
+  listPlaylists,
   listSessions,
   listSongs,
   removeMember,
@@ -98,6 +99,17 @@ export function createBandRoutes(connectedCounts: (sessionId: string) => number)
       sendError(res, error);
     }
   });
+  router.get(
+    "/:bandId/playlists",
+    validateRequest("params", bandIdParamsSchema),
+    async (req, res) => {
+      try {
+        res.json({ success: true, data: await listPlaylists(req.params.bandId, req.user!.id) });
+      } catch (error) {
+        sendError(res, error);
+      }
+    },
+  );
   router.post(
     "/:bandId/songs",
     validateRequest("params", bandIdParamsSchema),
