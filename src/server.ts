@@ -22,6 +22,7 @@ const REQUEST_WINDOW_MS = 15 * 60 * 1000;
 const API_REQUEST_LIMIT = 100;
 const AUTH_REQUEST_LIMIT = 8;
 const directory = dirname(fileURLToPath(import.meta.url));
+const publicDirectory = join(directory, "..", "public");
 const app = express();
 const server = createServer(app);
 const webSocketServer = new WebSocketServer({
@@ -124,7 +125,11 @@ function configureHttpApplication(): void {
   );
   app.use(express.json({ limit: "1mb" }));
   app.use("/api", validateRequest("query", emptyQuerySchema));
-  app.get("/", (_request, response) => response.sendFile(join(directory, "..", "index.html")));
+  app.use(express.static(publicDirectory, { index: false }));
+  app.get("/", (_request, response) => response.sendFile(join(publicDirectory, "index.html")));
+  app.get("/legacy", (_request, response) =>
+    response.sendFile(join(directory, "..", "index.html")),
+  );
   app.use("/api/auth", authRoutes);
   app.use(
     "/api/bands",

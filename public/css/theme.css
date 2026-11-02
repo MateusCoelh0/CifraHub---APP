@@ -1,0 +1,88 @@
+/* Tokens claros e dourados usados por toda a interface. */
+:root {
+  color-scheme: light;
+  --gold: #c89b3c;
+  --gold-light: #d4af37;
+  --gold-bright: #b88319;
+  --gold-pale: #f8edcf;
+  --gold-bg: rgba(200, 155, 60, 0.1);
+  --gold-bg-hover: rgba(200, 155, 60, 0.16);
+  --gold-border: rgba(200, 155, 60, 0.28);
+  --text-primary: #1d1d1f;
+  --text-secondary: #525257;
+  --text-muted: #86868b;
+  --bg-page: #f5f5f7;
+  --bg-glass: rgba(255, 255, 255, 0.75);
+  --bg-glass-strong: rgba(255, 255, 255, 0.9);
+  --bg-subtle: rgba(255, 255, 255, 0.56);
+  --bg-subtle-hover: rgba(255, 255, 255, 0.88);
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-glass: rgba(255, 255, 255, 0.72);
+  --shadow-sm: 0 12px 32px rgba(35, 35, 40, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.035);
+  --shadow-btn: 0 3px 10px rgba(35, 35, 40, 0.08);
+  --chord-color: #a87516;
+  --success: #23834f;
+  --danger: #c84040;
+  --glass-blur: blur(28px) saturate(190%);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #f5f5f7;
+  color: var(--text-primary);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+.container {
+  height: 100dvh;
+}
+
+.sidebar {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body::before {
+  background:
+    radial-gradient(ellipse at 14% 16%, rgba(212, 175, 55, 0.1) 0%, transparent 48%),
+    radial-gradient(ellipse at 92% 84%, rgba(255, 255, 255, 0.88) 0%, transparent 48%);
+}
+
+.glass,
+.glass-strong,
+.modal-content {
+  background: rgba(255, 255, 255, 0.75);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.container:not(.stage-mode):not(.viewer-mode) .sidebar {
+  display: flex;
+}
+
+.cifra-sheet {
+  font-family: "SF Mono", "Cascadia Mono", "Courier New", monospace;
+}
+
+.cifra-chord {
+  color: var(--chord-color);
+  font-weight: 750;
+}
+
+.cifra-chord:hover {
+  color: var(--gold-bright);
+}
+
+::selection {
+  color: #1d1d1f;
+  background: rgba(212, 175, 55, 0.28);
+}

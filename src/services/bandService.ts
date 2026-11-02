@@ -1,5 +1,6 @@
+import { randomInt } from "node:crypto";
 import { pool } from "../db/repository.js";
-import type { Song } from "../domain/entities.js";
+import type { Setlist, Song } from "../domain/entities.js";
 import type { AuthUser } from "../auth/authService.js";
 import type { Pool } from "pg";
 
@@ -22,6 +23,7 @@ export interface MemberSummary {
 export interface LiveSessionSummary {
   id: string;
   bandId: string;
+  code: string;
   status: string;
   createdAt: Date;
   startedAt: Date | null;
@@ -201,6 +203,23 @@ export async function listSongs(bandId: string, userId: string): Promise<Song[]>
   return rows;
 }
 
+/** Lista setlists e músicas ordenadas após confirmar o vínculo do usuário com a banda.
+ * @param bandId Banda consultada.
+ * @param userId Usuário autenticado.
+ * @returns Setlists disponíveis na banda.
+ */
+export async function listPlaylists(bandId: string, userId: string): Promise<Setlist[]> {
+  await requireBandRole(bandId, userId);
+  const { rows } = await db().query(
+    `SELECT p.id::text, p.name, COALESCE(array_agg(ps.song_id::text ORDER BY ps.position)
+       FILTER (WHERE ps.song_id IS NOT NULL), '{}') AS songs
+     FROM playlists p LEFT JOIN playlist_songs ps ON ps.playlist_id = p.id
+     WHERE p.band_id = $1 GROUP BY p.id ORDER BY p.created_at, p.id`,
+    [bandId],
+  );
+  return rows;
+}
+
 /** Cria música se o integrante tiver papel ADMIN ou MEMBER.
  * @param bandId Banda proprietária do repertório.
  * @param userId Usuário que cria a música.
@@ -233,12 +252,29 @@ export async function createLiveSession(
   playlistId?: string,
 ): Promise<LiveSessionSummary> {
   await requireBandRole(bandId, userId, editableRoles);
-  const { rows } = await db().query(
-    `INSERT INTO sessions (band_id,playlist_id,created_by,status,started_at)
-    VALUES ($1,$2,$3,'LIVE',now()) RETURNING id::text,band_id::text AS "bandId",playlist_id::text AS "playlistId",status,created_at AS "createdAt",started_at AS "startedAt"`,
-    [bandId, playlistId || null, userId],
-  );
-  return rows[0];
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    try {
+      const { rows } = await db().query(
+        `INSERT INTO sessions (band_id,playlist_id,created_by,status,started_at,session_code)
+        VALUES ($1,$2,$3,'LIVE',now(),$4)
+        RETURNING id::text,band_id::text AS "bandId",playlist_id::text AS "playlistId",
+        session_code AS code,status,created_at AS "createdAt",started_at AS "startedAt"`,
+        [bandId, playlistId || null, userId, code],
+      );
+      return rows[0];
+    } catch (error) {
+      const isCodeCollision =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505" &&
+        "constraint" in error &&
+        error.constraint === "sessions_live_session_code_idx";
+      if (!isCodeCollision) throw error;
+    }
+  }
+  throw new Error("Não foi possível gerar um código de sessão único.");
 }
 
 /** Lista sessões ativas da banda e conta os dispositivos conectados em memória.
@@ -254,7 +290,8 @@ export async function listSessions(
 ): Promise<Array<LiveSessionSummary & { connectedDevices: number }>> {
   await requireBandRole(bandId, userId);
   const { rows } = await db().query(
-    `SELECT id::text,band_id::text AS "bandId",status,created_at AS "createdAt",started_at AS "startedAt"
+    `SELECT id::text,band_id::text AS "bandId",session_code AS code,status,
+       created_at AS "createdAt",started_at AS "startedAt"
     FROM sessions WHERE band_id=$1 AND status='LIVE' ORDER BY started_at DESC`,
     [bandId],
   );
