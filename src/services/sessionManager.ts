@@ -4,6 +4,7 @@ export interface ClientRecord {
   id: string;
   isHost: boolean;
   deviceName: string;
+  bandRole?: "ADMIN" | "MEMBER" | "VIEWER" | null;
   send: (message: unknown) => void;
 }
 
@@ -30,15 +31,15 @@ export class SessionManager {
     return session;
   }
 
-  connect(session: ManagedSession, client: ClientRecord): void {
+  connect(session: ManagedSession, client: ClientRecord, canControl = false): void {
     session.clients.set(client.id, client);
-    if (!session.hostId) { session.hostId = client.id; client.isHost = true; }
+    if (!session.hostId && canControl) { session.hostId = client.id; client.isHost = true; }
   }
 
   disconnect(session: ManagedSession, clientId: string): string | null {
     session.clients.delete(clientId);
     if (session.hostId !== clientId) return null;
-    const next = session.clients.values().next().value as ClientRecord | undefined;
+    const next = [...session.clients.values()].find(client => client.bandRole === "ADMIN" || client.bandRole === "MEMBER");
     session.hostId = next?.id ?? null;
     if (next) next.isHost = true;
     return session.hostId;

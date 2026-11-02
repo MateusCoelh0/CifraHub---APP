@@ -19,7 +19,11 @@ export async function loadBandLibrary(email) {
      ORDER BY b.created_at LIMIT 1`, [email]
   );
   if (!band.rowCount) throw new Error("Banda inicial não encontrada. Execute npm run db:import-legacy.");
-  const bandId = band.rows[0].id;
+  return loadBandLibraryById(band.rows[0].id);
+}
+
+export async function loadBandLibraryById(bandId) {
+  if (!pool) throw new Error("DATABASE_URL necessária.");
   const songs = await pool.query(
     `SELECT id::text, title, artist, musical_key AS key, tempo, lyrics AS cifra
      FROM songs WHERE band_id = $1 ORDER BY created_at, id`, [bandId]
