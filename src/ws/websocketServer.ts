@@ -160,9 +160,14 @@ export class WebSocketSessionService {
         clientId: client.id,
         isHost: client.isHost,
         clientsCount: session.clients.size,
+        clients: manager.getClientSummaries(session),
         ...(client.isHost && session.hostToken ? { hostToken: session.hostToken } : {}),
       });
-      manager.broadcast(session, { type: "clientsUpdate", clientsCount: session.clients.size });
+      manager.broadcast(session, {
+        type: "clientsUpdate",
+        clientsCount: session.clients.size,
+        clients: manager.getClientSummaries(session),
+      });
       const context: ConnectionContext = {
         socket,
         session,
@@ -313,8 +318,59 @@ export class WebSocketSessionService {
         return true;
       case "setDeviceName":
         client.deviceName = message.name;
-        manager.broadcast(session, { type: "clientsUpdate", clientsCount: session.clients.size });
+        manager.broadcast(session, {
+          type: "clientsUpdate",
+          clientsCount: session.clients.size,
+          clients: manager.getClientSummaries(session),
+        });
         return true;
+      case "transferHost": {
+        const isAdmin = client.bandRole === "ADMIN";
+        if (manager.transferHost(session, client.id, message.targetClientId, isAdmin)) {
+          const newHost = session.clients.get(message.targetClientId);
+          manager.broadcast(session, {
+            type: "hostTransferred",
+            previousHostId: client.id,
+            newHostId: message.targetClientId,
+            hostToken: session.hostToken ?? undefined,
+          });
+          manager.broadcast(session, {
+            type: "clientsUpdate",
+            clientsCount: session.clients.size,
+            clients: manager.getClientSummaries(session),
+          });
+          if (newHost) {
+            newHost.send({
+              type: "newHost",
+              clientId: newHost.id,
+              hostToken: session.hostToken ?? undefined,
+            });
+          }
+        }
+        return true;
+      }
+      case "claimHost": {
+        const isAdmin = client.bandRole === "ADMIN";
+        if (manager.claimHost(session, client.id, isAdmin)) {
+          manager.broadcast(session, {
+            type: "hostTransferred",
+            previousHostId: session.hostId ?? "",
+            newHostId: client.id,
+            hostToken: session.hostToken ?? undefined,
+          });
+          manager.broadcast(session, {
+            type: "clientsUpdate",
+            clientsCount: session.clients.size,
+            clients: manager.getClientSummaries(session),
+          });
+          client.send({
+            type: "newHost",
+            clientId: client.id,
+            hostToken: session.hostToken ?? undefined,
+          });
+        }
+        return true;
+      }
       case "selectSong":
         if (host) this.selectSong(session, message.song, message.index);
         return true;
@@ -486,7 +542,11 @@ export class WebSocketSessionService {
     const { session, manager, client } = context;
     const nextHost = manager.disconnect(session, client.id);
     if (nextHost) manager.broadcast(session, { type: "newHost", clientId: nextHost });
-    manager.broadcast(session, { type: "clientsUpdate", clientsCount: session.clients.size });
+    manager.broadcast(session, {
+      type: "clientsUpdate",
+      clientsCount: session.clients.size,
+      clients: manager.getClientSummaries(session),
+    });
   }
 
   private broadcast(session: ManagedSession, message: ServerMessage): void {

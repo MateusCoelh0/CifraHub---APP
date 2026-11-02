@@ -58,6 +58,8 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
     })
     .strict(),
   z.object({ type: z.literal("updateSetlist"), setlist }).strict(),
+  z.object({ type: z.literal("transferHost"), targetClientId: z.string().min(1).max(100) }).strict(),
+  z.object({ type: z.literal("claimHost") }).strict(),
 ]);
 
 /** Valida uma mensagem JSON não confiável conforme o protocolo WebSocket.

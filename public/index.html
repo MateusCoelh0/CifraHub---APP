@@ -115,25 +115,13 @@
           </div>
           <label class="control-label" for="bandSelector">Banda</label>
           <select id="bandSelector" class="select-input" aria-label="Selecionar banda"></select>
-          <button class="btn" id="createBandButton" type="button">＋ Nova banda</button>
-          <label class="control-label" for="sessionSelector">Sessão ao vivo</label>
-          <select
-            id="sessionSelector"
-            class="select-input"
-            aria-label="Selecionar sessão ativa"
-          ></select>
-          <div class="workspace-actions">
-            <button class="btn-primary" id="startSessionButton" type="button">
-              Iniciar sessão
-            </button>
-            <button class="btn" id="joinSessionButton" type="button">Conectar</button>
-          </div>
-          <div class="session-code-card" id="sessionCodeCard" hidden>
+          <button class="btn" id="createBandButton" type="button" style="margin-top: 6px; width: 100%; justify-content: center;">＋ Nova banda</button>
+
+          <div class="session-code-card" id="sessionCodeCard" hidden style="margin-top: 10px;">
             <span class="eyebrow">Código para convidados</span>
             <strong id="sessionCodeLabel">------</strong>
             <button class="btn" id="copySessionLinkButton" type="button">Copiar convite</button>
           </div>
-          <button class="text-button" id="logoutButton" type="button">Sair da conta</button>
         </section>
 
         <div class="status-bar">
@@ -143,9 +131,9 @@
               ><span class="dot-online"></span> Online</span
             >
           </div>
-          <div class="status-item">
+          <div class="status-item" id="connectedMusiciansTrigger" style="cursor: pointer;" title="Ver músicos conectados na sessão" onclick="showMusiciansModal()">
             <span class="status-label">Músicos</span>
-            <span class="status-value" id="clientsCount">0</span>
+            <span class="status-value" id="clientsCount" style="color: var(--gold); font-weight: 700;">0 👥</span>
           </div>
           <div class="status-item">
             <span class="status-label">Função</span>
@@ -250,6 +238,7 @@
             >
               🎛️ Controles
             </button>
+            <button class="btn accent" id="tunerBtn" onclick="window.CifraHubTuner ? window.CifraHubTuner.open() : null" title="Afinador digital de instrumentos">🎯 Afinador</button>
             <button class="btn-primary" id="stageModeBtn" onclick="toggleStageMode()">
               ⬤ Palco
             </button>
@@ -522,7 +511,17 @@
               required
             ></textarea>
           </div>
-          <div class="modal-buttons">
+                  <div style="border-top: 1px solid var(--border-light); margin-top: 16px; padding-top: 14px;">
+          <button
+            class="btn"
+            id="logoutButton"
+            type="button"
+            style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); font-weight: 600;"
+          >
+            🚪 Sair da Conta
+          </button>
+        </div>
+        <div class="modal-buttons" style="margin-top: 12px;">
             <button
               type="button"
               class="btn"
@@ -689,6 +688,73 @@
       </div>
     </div>
 
+    
+    <!-- Modal: Afinador Digital de Cordas -->
+    <div class="modal" id="tunerModal">
+      <div class="modal-content tuner-modal-content">
+        <div class="modal-title" style="margin-bottom: 14px;">🎯 Afinador Digital</div>
+        
+        <div class="tuner-instrument-selector">
+          <button type="button" class="tuner-instrument-btn active" data-instrument="guitar" onclick="window.CifraHubTuner.setInstrument('guitar')">Violão / Guitarra</button>
+          <button type="button" class="tuner-instrument-btn" data-instrument="bass" onclick="window.CifraHubTuner.setInstrument('bass')">Baixo</button>
+          <button type="button" class="tuner-instrument-btn" data-instrument="ukulele" onclick="window.CifraHubTuner.setInstrument('ukulele')">Ukulele</button>
+          <button type="button" class="tuner-instrument-btn" data-instrument="chromatic" onclick="window.CifraHubTuner.setInstrument('chromatic')">Cromático</button>
+        </div>
+
+        <div class="tuner-display-panel">
+          <div class="tuner-cents-labels">
+            <span>-50</span>
+            <span>-25</span>
+            <span>0</span>
+            <span>+25</span>
+            <span>+50</span>
+          </div>
+          <div class="tuner-meter-track">
+            <div class="tuner-meter-center"></div>
+            <div class="tuner-meter-needle" id="tunerNeedle"></div>
+          </div>
+          <div class="tuner-note-big" id="tunerNote">--</div>
+          <div class="tuner-frequency-row">
+            <span id="tunerFreq">-- Hz</span>
+            <span class="tuner-cents-tag" id="tunerCents">0 cents</span>
+          </div>
+        </div>
+
+        <div class="tuner-strings-grid" id="tunerStringsGrid"></div>
+        <div id="tunerStatus" style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Toque uma corda no instrumento</div>
+
+        <div class="modal-buttons">
+          <button type="button" class="btn" style="justify-content: center; flex: 1" onclick="window.CifraHubTuner.close()">
+            Fechar Afinador
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Músicos na Sessão e Transferência de Host -->
+    <div class="modal" id="musiciansModal">
+      <div class="modal-content" style="max-width: 440px;">
+        <div class="modal-title">👥 Músicos Conectados</div>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+          Integrantes acompanhando o palco nesta sessão.
+        </p>
+
+        <div id="claimHostBanner" style="display: none; margin-bottom: 12px;">
+          <button type="button" class="btn-primary" style="width: 100%; justify-content: center;" onclick="claimHostBack()">
+            👑 Assumir Controle do Palco (Host)
+          </button>
+        </div>
+
+        <div class="musicians-list" id="musiciansList"></div>
+
+        <div class="modal-buttons">
+          <button type="button" class="btn" style="justify-content: center; flex: 1" onclick="closeModal('musiciansModal')">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal: Configurações -->
     <div class="modal" id="settingsModal">
       <div class="modal-content">
@@ -747,6 +813,7 @@
         ▶<span>Rolar</span>
       </button>
       <button type="button" id="dockTransposeDown" aria-label="Baixar um semitom">−1</button>
+      <button type="button" id="dockTuner" onclick="window.CifraHubTuner ? window.CifraHubTuner.open() : null" aria-label="Afinador">🎯<span>Afinação</span></button>
       <button type="button" id="dockStageMode" aria-label="Ativar modo palco">Palco</button>
       <button type="button" id="dockTransposeUp" aria-label="Subir um semitom">+1</button>
       <button type="button" id="dockControls" aria-label="Abrir controles de palco">
@@ -765,6 +832,7 @@
     <script src="/js/api.js"></script>
     <script src="/js/websocket.js"></script>
     <script src="/js/bands.js"></script>
+    <script src="/js/tuner.js"></script>
     <script src="/js/touch.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/app.js"></script>

@@ -60,7 +60,7 @@ body::before {
 
 .container {
   display: grid;
-  grid-template-columns: 260px 1fr 280px;
+  grid-template-columns: 350px 1fr 290px;
   height: 100vh;
   gap: 12px;
   padding: 12px;
@@ -283,8 +283,15 @@ body::before {
 }
 
 .song-item-wrapper .song-item {
-  flex: 1;
-  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
 }
 
 .song-item {
@@ -692,47 +699,58 @@ body::before {
   text-align: center;
 }
 
-/* Controle deslizante inspirado no iOS */
+/* Controle deslizante com alto contraste Amarelo/Dourado Vivo */
 .slider-input {
   width: 100%;
-  height: 6px;
+  height: 8px;
   border-radius: 99px;
-  background: rgba(0, 0, 0, 0.06);
+  background: #d1d5db;
   outline: none;
   -webkit-appearance: none;
   appearance: none;
-  margin: 6px 0;
+  margin: 8px 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  cursor: pointer;
 }
 
 .slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: white;
+  background: #eab308;
+  border: 2px solid #b45309;
   cursor: pointer;
   box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.15s;
+    0 2px 6px rgba(0, 0, 0, 0.28),
+    0 0 0 3px rgba(234, 179, 8, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #f59e0b;
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(0, 0, 0, 0.06);
+    0 3px 8px rgba(0, 0, 0, 0.35),
+    0 0 0 4px rgba(245, 158, 11, 0.4);
 }
 
 .slider-input::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: white;
+  background: #eab308;
+  border: 2px solid #b45309;
   cursor: pointer;
-  border: none;
   box-shadow:
-    0 1px 4px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.04);
+    0 2px 6px rgba(0, 0, 0, 0.28),
+    0 0 0 3px rgba(234, 179, 8, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.slider-input::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  background: #f59e0b;
 }
 
 .select-input {
@@ -1012,3 +1030,322 @@ body::before {
 
 #setlistsList { overflow-y: auto; max-height: 220px; padding: 2px; }
 .repertoire-wrap { display: flex; flex-direction: column; min-height: 160px; max-height: 48vh; }
+
+
+/* ═══════════════ REFINAMENTOS DE LAYOUT E VISIBILIDADE ═══════════════ */
+.sidebar {
+  height: 100%;
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.repertoire-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 52%;
+  min-height: 200px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 8px;
+}
+
+#songsList {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px 10px;
+}
+
+.setlist-section-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 48%;
+  min-height: 160px;
+  overflow: hidden;
+  padding-top: 8px;
+}
+
+#setlistsList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 10px;
+}
+
+.song-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-badge-key {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b45309;
+  background: rgba(234, 179, 8, 0.16);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: 6px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+/* ═══════════════ MODAL DO AFINADOR DIGITAL ═══════════════ */
+.tuner-modal-content {
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  padding: 24px 20px;
+}
+
+.tuner-instrument-selector {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tuner-instrument-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tuner-instrument-btn.active {
+  background: var(--gold);
+  color: white;
+  border-color: var(--gold-border);
+  box-shadow: 0 2px 8px rgba(202, 138, 4, 0.3);
+}
+
+.tuner-display-panel {
+  background: #18181b;
+  border-radius: 20px;
+  padding: 28px 20px 22px;
+  color: #f4f4f5;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.12);
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tuner-meter-track {
+  width: 100%;
+  height: 8px;
+  background: #27272a;
+  border-radius: 99px;
+  position: relative;
+  margin: 18px 0 14px;
+  overflow: visible;
+}
+
+.tuner-meter-center {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 16px;
+  background: #22c55e;
+  border-radius: 2px;
+}
+
+.tuner-meter-needle {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 4px;
+  height: 20px;
+  background: #eab308;
+  border-radius: 2px;
+  box-shadow: 0 0 8px #eab308;
+  transition: left 0.1s ease-out;
+}
+
+.tuner-cents-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #71717a;
+  padding: 0 2px;
+}
+
+.tuner-note-big {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+  margin: 10px 0 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -1px;
+  transition: color 0.15s ease;
+}
+
+.tuner-note-big.in-tune {
+  color: #22c55e !important;
+  text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.tuner-frequency-row {
+  font-size: 14px;
+  color: #a1a1aa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-weight: 500;
+}
+
+.tuner-cents-tag {
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #27272a;
+  color: #d4d4d8;
+}
+
+.tuner-cents-tag.in-tune {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.tuner-strings-grid {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tuner-string-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border-light);
+  background: white;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tuner-string-btn:hover {
+  background: var(--gold-bg);
+  border-color: var(--gold-border);
+}
+
+.tuner-string-btn.active {
+  background: var(--gold);
+  color: white;
+  border-color: var(--gold-border);
+  box-shadow: 0 2px 8px rgba(202, 138, 4, 0.3);
+}
+
+.tuner-actions-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ═══════════════ MODAL DE MÚSICOS CONECTADOS ═══════════════ */
+.musicians-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  margin: 16px 0;
+}
+
+.musician-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #fafaf8;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  gap: 12px;
+}
+
+.musician-card.is-current {
+  border-color: var(--gold-border);
+  background: var(--gold-bg);
+}
+
+.musician-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.musician-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.musician-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.musician-role-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.musician-role-tag.host {
+  background: rgba(202, 138, 4, 0.15);
+  color: var(--gold);
+  border: 1px solid var(--gold-border);
+}
+
+.musician-role-tag.viewer {
+  background: #e4e4e7;
+  color: #52525b;
+}
+
+.btn-transfer-host {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--gold-border);
+  background: white;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-transfer-host:hover {
+  background: var(--gold);
+  color: white;
+}

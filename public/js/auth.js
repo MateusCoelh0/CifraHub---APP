@@ -81,6 +81,7 @@
     context.nickname = null;
     window.CifraHubBands.reset();
     window.CifraHubApp.disconnect();
+    document.querySelectorAll(".modal.active").forEach((m) => m.classList.remove("active"));
     document.getElementById("workspacePanel").hidden = true;
     document.getElementById("container").classList.remove("stage-mode", "viewer-mode");
     document.body.classList.add("auth-locked");

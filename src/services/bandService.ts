@@ -303,6 +303,23 @@ export async function createLiveSession(
   playlistId?: string,
 ): Promise<LiveSessionSummary> {
   await requireBandRole(bandId, userId, editableRoles);
+
+  // Singleton Session: reutiliza a sessão LIVE existente para a mesma banda
+  const existing = await db().query(
+    `SELECT id::text, band_id::text AS "bandId", playlist_id::text AS "playlistId",
+            session_code AS code, status, created_at AS "createdAt", started_at AS "startedAt"
+     FROM sessions WHERE band_id=$1 AND status='LIVE'
+     ORDER BY started_at DESC LIMIT 1`,
+    [bandId],
+  );
+  if (existing.rowCount && existing.rows[0]) {
+    if (playlistId && existing.rows[0].playlistId !== playlistId) {
+      await db().query(`UPDATE sessions SET playlist_id=$1 WHERE id=$2`, [playlistId, existing.rows[0].id]);
+      existing.rows[0].playlistId = playlistId;
+    }
+    return existing.rows[0];
+  }
+
   for (let attempt = 0; attempt < 10; attempt++) {
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
     try {

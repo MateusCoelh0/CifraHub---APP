@@ -1,7 +1,7 @@
-/* Cuida da banda ativa, do repertório e das salas de palco do usuário. */
+/* Cuida da banda ativa, do repertório e da sessão única de palco do usuário. */
 (() => {
   const context = (window.CifraHubContext = window.CifraHubContext ?? {});
-  const state = { bands: [], activeBand: null, sessions: [], activeSession: null };
+  const state = { bands: [], activeBand: null, session: null };
   let bound = false;
 
   function showFeedback(message, kind = "success") {
@@ -19,6 +19,7 @@
   }
 
   function setOptions(select, items, placeholder, selectedValue = "") {
+    if (!select) return;
     select.replaceChildren(new Option(placeholder, ""));
     for (const item of items) {
       const option = new Option(item.label, item.value);
@@ -30,43 +31,48 @@
   function bindControls() {
     if (bound) return;
     bound = true;
-    document.getElementById("bandSelector").addEventListener("change", (event) => {
-      void selectBand(event.currentTarget.value);
-    });
-    document.getElementById("sessionSelector").addEventListener("change", (event) => {
-      const selected = state.sessions.find((session) => session.id === event.currentTarget.value);
-      state.activeSession = selected ?? null;
-      showSessionCode(selected?.code ?? "");
-    });
-    document
-      .getElementById("startSessionButton")
-      .addEventListener("click", () => void startSession());
-    document
-      .getElementById("joinSessionButton")
-      .addEventListener("click", () => void joinSelectedSession());
-    document.getElementById("createBandButton").addEventListener("click", () => void createBand());
-    document
-      .getElementById("copySessionLinkButton")
-      .addEventListener("click", () => void copyInvite());
+
+    const bandSelector = document.getElementById("bandSelector");
+    if (bandSelector) {
+      bandSelector.addEventListener("change", (event) => {
+        void selectBand(event.currentTarget.value);
+      });
+    }
+
+    const createBandBtn = document.getElementById("createBandButton");
+    if (createBandBtn) {
+      createBandBtn.addEventListener("click", () => void createBand());
+    }
+
+    const copyBtn = document.getElementById("copySessionLinkButton");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", () => void copyInvite());
+    }
   }
 
   async function initialize(profile) {
     bindControls();
     context.user = profile.user;
-    document.getElementById("currentUserName").textContent =
-      profile.user.displayName ?? profile.user.name;
-    document.getElementById("workspacePanel").hidden = false;
+    const nameEl = document.getElementById("currentUserName");
+    if (nameEl) {
+      nameEl.textContent = profile.user.displayName ?? profile.user.name;
+    }
+    const panel = document.getElementById("workspacePanel");
+    if (panel) panel.hidden = false;
+
     state.bands = profile.bands ?? [];
     if (!state.bands.length) {
       state.activeBand = null;
-      document.getElementById("bandRoleBadge").hidden = true;
-      document.getElementById("startSessionButton").disabled = true;
-      document.getElementById("joinSessionButton").disabled = true;
+      state.session = null;
+      const roleBadge = document.getElementById("bandRoleBadge");
+      if (roleBadge) roleBadge.hidden = true;
       setOptions(document.getElementById("bandSelector"), [], "Crie sua primeira banda");
       await window.CifraHubApp.setLibrary([], []);
+      showSessionCode("");
       showFeedback("Crie uma banda para começar a montar o repertório.");
       return;
     }
+
     const preferredBand = localStorage.getItem("cifrahub_bandId");
     const selected = state.bands.find((band) => band.id === preferredBand) ?? state.bands[0];
     await selectBand(selected.id);
@@ -76,10 +82,12 @@
     if (!bandId) return;
     const band = state.bands.find((item) => item.id === bandId);
     if (!band) return;
+
     state.activeBand = band;
-    state.activeSession = null;
+    state.session = null;
     context.activeBand = band;
     localStorage.setItem("cifrahub_bandId", band.id);
+
     const bandSelector = document.getElementById("bandSelector");
     setOptions(
       bandSelector,
@@ -87,38 +95,47 @@
       "Selecione uma banda",
       band.id,
     );
-    document.getElementById("roleDisplay").textContent = band.role ?? "MEMBER";
-    document.getElementById("bandRoleBadge").textContent = band.role ?? "MEMBER";
-    document.getElementById("bandRoleBadge").hidden = false;
-    document.getElementById("startSessionButton").disabled = band.role === "VIEWER";
+
+    const roleEl = document.getElementById("roleDisplay");
+    if (roleEl) roleEl.textContent = band.role ?? "MEMBER";
+    const roleBadge = document.getElementById("bandRoleBadge");
+    if (roleBadge) {
+      roleBadge.textContent = band.role ?? "MEMBER";
+      roleBadge.hidden = false;
+    }
+
     window.CifraHubApp.disconnect();
+
     try {
-      const [songsResult, playlistsResult, sessionsResult] = await Promise.all([
+      // 1. Carregar Repertório e Setlists da banda
+      const [songsResult, playlistsResult] = await Promise.all([
         window.CifraHubApi.request(`/api/bands/${band.id}/songs`),
         window.CifraHubApi.request(`/api/bands/${band.id}/playlists`),
-        window.CifraHubApi.request(`/api/bands/${band.id}/sessions`),
       ]);
-      state.sessions = sessionsResult.data ?? [];
-      setOptions(
-        document.getElementById("sessionSelector"),
-        state.sessions.map((session) => ({
-          label: `${session.code} · ${session.connectedDevices} conectados`,
-          value: session.id,
-        })),
-        state.sessions.length ? "Escolha uma sessão ativa" : "Nenhuma sessão ativa",
-      );
-      document.getElementById("joinSessionButton").disabled = state.sessions.length === 0;
+
       await window.CifraHubApp.setLibrary(songsResult.data ?? [], playlistsResult.data ?? []);
-      showSessionCode("");
-      // Auto-conectar: entrar numa sessão existente ou criar uma nova
-      if (state.sessions.length > 0) {
-        const session = state.sessions[0];
-        state.activeSession = session;
-        document.getElementById("sessionSelector").value = session.id;
+
+      // 2. Singleton Session: Obter ou criar a sessão fixa da banda
+      let session = null;
+      const sessionsResult = await window.CifraHubApi.request(`/api/bands/${band.id}/sessions`);
+      const existingSessions = sessionsResult.data ?? [];
+
+      if (existingSessions.length > 0) {
+        session = existingSessions[0];
+      } else if (band.role !== "VIEWER") {
+        // Criar a sessão única para a banda
+        session = await window.CifraHubApi.request(`/api/bands/${band.id}/sessions`, {
+          method: "POST",
+          body: {},
+        });
+      }
+
+      if (session) {
+        state.session = session;
         showSessionCode(session.code);
         window.CifraHubApp.startAuthenticatedSession(session, band);
-      } else if (band.role !== "VIEWER") {
-        await startSession();
+      } else {
+        showSessionCode("");
       }
     } catch (error) {
       showFeedback(error.message, "error");
@@ -142,72 +159,16 @@
     }
   }
 
-  async function startSession() {
-    if (!state.activeBand || state.activeBand.role === "VIEWER") return;
-    try {
-      const session = await window.CifraHubApi.request(
-        `/api/bands/${state.activeBand.id}/sessions`,
-        { method: "POST", body: {} },
-      );
-      state.activeSession = session;
-      showSessionCode(session.code);
-      window.CifraHubApp.startAuthenticatedSession(session, state.activeBand);
-      await refreshSessions(session.id);
-      showFeedback("Sessão iniciada. Compartilhe o código com a banda.");
-    } catch (error) {
-      showFeedback(error.message, "error");
-    }
-  }
-
-  async function refreshSessions(selectedId = "") {
-    if (!state.activeBand) return;
-    const result = await window.CifraHubApi.request(`/api/bands/${state.activeBand.id}/sessions`);
-    state.sessions = result.data ?? [];
-    setOptions(
-      document.getElementById("sessionSelector"),
-      state.sessions.map((session) => ({
-        label: `${session.code} · ${session.connectedDevices} conectados`,
-        value: session.id,
-      })),
-      state.sessions.length ? "Escolha uma sessão ativa" : "Nenhuma sessão ativa",
-      selectedId,
-    );
-    document.getElementById("joinSessionButton").disabled = state.sessions.length === 0;
-    state.activeSession =
-      state.sessions.find((session) => session.id === selectedId) ?? state.activeSession;
-  }
-
-  async function joinSelectedSession() {
-    const sessionId = document.getElementById("sessionSelector").value;
-    const session = state.sessions.find((item) => item.id === sessionId);
-    if (!session) {
-      showFeedback("Selecione uma sessão ao vivo para conectar.", "error");
-      return;
-    }
-    state.activeSession = session;
-    showSessionCode(session.code);
-    window.CifraHubApp.startAuthenticatedSession(session, state.activeBand);
-  }
-
-  async function joinCode(code) {
-    const knownSession = state.sessions.find((session) => session.code === code);
-    if (knownSession) {
-      state.activeSession = knownSession;
-      showSessionCode(code);
-      window.CifraHubApp.startAuthenticatedSession(knownSession, state.activeBand);
-      return;
-    }
-    window.CifraHubApp.startAuthenticatedSession({ code }, state.activeBand);
-  }
-
   function showSessionCode(code) {
     const card = document.getElementById("sessionCodeCard");
-    card.hidden = !code;
-    document.getElementById("sessionCodeLabel").textContent = code || "------";
+    if (card) card.hidden = !code;
+    const label = document.getElementById("sessionCodeLabel");
+    if (label) label.textContent = code || "------";
   }
 
   async function copyInvite() {
-    const code = document.getElementById("sessionCodeLabel").textContent;
+    const label = document.getElementById("sessionCodeLabel");
+    const code = label ? label.textContent.trim() : "";
     if (!/^\d{6}$/.test(code)) return;
     const link = `${window.location.origin}/?code=${code}`;
     try {
@@ -221,10 +182,9 @@
   function reset() {
     state.bands = [];
     state.activeBand = null;
-    state.sessions = [];
-    state.activeSession = null;
+    state.session = null;
     context.activeBand = null;
   }
 
-  window.CifraHubBands = Object.freeze({ initialize, selectBand, joinCode, reset, state });
+  window.CifraHubBands = Object.freeze({ initialize, selectBand, reset, state });
 })();

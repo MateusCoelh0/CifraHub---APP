@@ -181,6 +181,7 @@ function handleMessage(message) {
       appState.songs = message.state.songs;
       appState.setlists = message.state.setlists;
       appState.clientsCount = message.clientsCount;
+      if (message.clients) appState.connectedClients = message.clients;
       syncState(message.state);
       renderSongs();
       renderSetlists();
@@ -196,7 +197,24 @@ function handleMessage(message) {
 
     case "clientsUpdate":
       appState.clientsCount = message.clientsCount;
+      if (message.clients) appState.connectedClients = message.clients;
       updateUI();
+      renderMusiciansModal();
+      break;
+
+    case "hostTransferred":
+      if (message.newHostId === appState.clientId) {
+        appState.isHost = true;
+        showToast("👑 Você agora é o Líder do Palco (Host)!");
+      } else if (message.oldHostId === appState.clientId) {
+        appState.isHost = false;
+        showToast(`👑 O controle do palco foi passado para ${message.newHostName ?? "outro integrante"}.`);
+      } else {
+        showToast(`👑 Novo líder do palco: ${message.newHostName ?? "Músico"}`);
+      }
+      if (message.clients) appState.connectedClients = message.clients;
+      updateUI();
+      renderMusiciansModal();
       break;
 
     case "newHost":
@@ -907,7 +925,8 @@ function renderSongs() {
 
     const div = document.createElement("div");
     div.className = "song-item" + (appState.currentSong?.id === song.id ? " active" : "");
-    div.innerHTML = `<div class="song-title">${escapeHtml(song.title)}</div><div class="song-artist">${escapeHtml(song.artist || "")}</div>`;
+    const keyBadge = song.key ? `<span class="song-badge-key">${escapeHtml(song.key)}</span>` : "";
+    div.innerHTML = `<div class="song-info"><div class="song-title">${escapeHtml(song.title)}</div><div class="song-artist">${escapeHtml(song.artist || "")}</div></div>${keyBadge}`;
     div.onclick = () => {
       selectSong(index);
     };
@@ -1168,18 +1187,41 @@ function showCreateSetlistModal() {
   const checkboxDiv = document.getElementById("setlistSongsCheckbox");
   checkboxDiv.innerHTML = "";
 
-  appState.songs.forEach((song) => {
-    const label = document.createElement("label");
-    label.style.cssText =
-      "display: block; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 13px;";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = song.id;
-    input.style.marginRight = "8px";
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(`${song.title} - ${song.artist}`));
-    checkboxDiv.appendChild(label);
-  });
+  if (!appState.songs || appState.songs.length === 0) {
+    const emptyMsg = document.createElement("div");
+    emptyMsg.style.cssText = "color: var(--text-muted); font-size: 13px; text-align: center; padding: 14px 8px; line-height: 1.5;";
+    emptyMsg.innerHTML = "⚠️ Nenhuma música cadastrada no repertório.<br><small>Adicione músicas ao repertório da banda antes de criar uma setlist.</small>";
+    checkboxDiv.appendChild(emptyMsg);
+  } else {
+    appState.songs.forEach((song) => {
+      const label = document.createElement("label");
+      label.style.cssText =
+        "display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; color: var(--text-primary); font-size: 13px; background: white; border: 1px solid var(--border-light); border-radius: 8px;";
+      
+      const leftSpan = document.createElement("span");
+      leftSpan.style.cssText = "display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;";
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = song.id;
+
+      const textSpan = document.createElement("span");
+      textSpan.style.cssText = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;";
+      textSpan.textContent = `${song.title}${song.artist ? ` - ${song.artist}` : ""}`;
+
+      leftSpan.append(input, textSpan);
+      label.appendChild(leftSpan);
+
+      if (song.key) {
+        const keyTag = document.createElement("span");
+        keyTag.className = "song-badge-key";
+        keyTag.textContent = song.key;
+        label.appendChild(keyTag);
+      }
+
+      checkboxDiv.appendChild(label);
+    });
+  }
 
   document.getElementById("createSetlistModal").classList.add("active");
 }
@@ -1196,21 +1238,130 @@ function showEditSetlistModal(id) {
   const checkboxDiv = document.getElementById("setlistSongsCheckbox");
   checkboxDiv.innerHTML = "";
 
-  appState.songs.forEach((song) => {
-    const label = document.createElement("label");
-    label.style.cssText =
-      "display: block; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 13px;";
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = song.id;
-    input.checked = setlist.songs.includes(song.id);
-    input.style.marginRight = "8px";
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(`${song.title} - ${song.artist}`));
-    checkboxDiv.appendChild(label);
-  });
+  if (!appState.songs || appState.songs.length === 0) {
+    const emptyMsg = document.createElement("div");
+    emptyMsg.style.cssText = "color: var(--text-muted); font-size: 13px; text-align: center; padding: 14px 8px; line-height: 1.5;";
+    emptyMsg.innerHTML = "⚠️ Nenhuma música cadastrada no repertório.";
+    checkboxDiv.appendChild(emptyMsg);
+  } else {
+    appState.songs.forEach((song) => {
+      const label = document.createElement("label");
+      label.style.cssText =
+        "display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; color: var(--text-primary); font-size: 13px; background: white; border: 1px solid var(--border-light); border-radius: 8px;";
+      
+      const leftSpan = document.createElement("span");
+      leftSpan.style.cssText = "display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;";
+
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = song.id;
+      input.checked = setlist.songs.includes(song.id);
+
+      const textSpan = document.createElement("span");
+      textSpan.style.cssText = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;";
+      textSpan.textContent = `${song.title}${song.artist ? ` - ${song.artist}` : ""}`;
+
+      leftSpan.append(input, textSpan);
+      label.appendChild(leftSpan);
+
+      if (song.key) {
+        const keyTag = document.createElement("span");
+        keyTag.className = "song-badge-key";
+        keyTag.textContent = song.key;
+        label.appendChild(keyTag);
+      }
+
+      checkboxDiv.appendChild(label);
+    });
+  }
 
   document.getElementById("createSetlistModal").classList.add("active");
+}
+
+
+function showMusiciansModal() {
+  renderMusiciansModal();
+  document.getElementById("musiciansModal")?.classList.add("active");
+}
+
+function transferHostTo(targetClientId) {
+  if (!targetClientId) return;
+  if (!confirm("Deseja realmente passar o controle do palco (Host) para este integrante?")) return;
+  sendMessage({
+    type: "transferHost",
+    targetClientId,
+  });
+}
+
+function claimHostBack() {
+  if (!confirm("Deseja reassumir o controle do palco (Host)?")) return;
+  sendMessage({
+    type: "claimHost",
+  });
+}
+
+function renderMusiciansModal() {
+  const list = document.getElementById("musiciansList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const activeBand = window.CifraHubContext?.activeBand;
+  const isAdmin = activeBand?.role === "ADMIN";
+  const canPassHost = appState.isHost || isAdmin;
+
+  const claimBanner = document.getElementById("claimHostBanner");
+  if (claimBanner) {
+    claimBanner.style.display = (isAdmin && !appState.isHost) ? "block" : "none";
+  }
+
+  const clients = appState.connectedClients || [];
+  if (clients.length === 0) {
+    list.innerHTML = `<div style="color: var(--text-muted); font-size: 13px; text-align: center; padding: 14px;">Nenhum integrante conectado no momento.</div>`;
+    return;
+  }
+
+  clients.forEach((client) => {
+    const isMe = client.clientId === appState.clientId;
+    const card = document.createElement("div");
+    card.className = "musician-card" + (isMe ? " is-current" : "");
+
+    const info = document.createElement("div");
+    info.className = "musician-info";
+
+    const icon = document.createElement("div");
+    icon.className = "musician-icon";
+    icon.textContent = client.isHost ? "🎸" : (client.isAnonymous ? "👁️" : "👤");
+
+    const details = document.createElement("div");
+    details.style.cssText = "min-width: 0; flex: 1;";
+
+    const nameRow = document.createElement("div");
+    nameRow.className = "musician-name";
+    nameRow.textContent = `${client.deviceName || "Dispositivo"}${isMe ? " (Você)" : ""}`;
+
+    const roleRow = document.createElement("div");
+    roleRow.style.cssText = "display: flex; gap: 6px; align-items: center; margin-top: 2px;";
+
+    const roleTag = document.createElement("span");
+    roleTag.className = `musician-role-tag ${client.isHost ? "host" : "viewer"}`;
+    roleTag.textContent = client.isHost ? "Líder (Host)" : (client.role === "ADMIN" ? "Admin" : "Músico");
+    roleRow.appendChild(roleTag);
+
+    details.append(nameRow, roleRow);
+    info.append(icon, details);
+    card.appendChild(info);
+
+    if (canPassHost && !client.isHost && !isMe) {
+      const btnPass = document.createElement("button");
+      btnPass.type = "button";
+      btnPass.className = "btn-transfer-host";
+      btnPass.textContent = "👑 Passar Host";
+      btnPass.onclick = () => transferHostTo(client.clientId);
+      card.appendChild(btnPass);
+    }
+
+    list.appendChild(card);
+  });
 }
 
 function showSettingsModal() {
@@ -1533,6 +1684,9 @@ Object.assign(window, {
   showEditSongModal,
   deleteCurrentSong,
   showSettingsModal,
+  showMusiciansModal,
+  transferHostTo,
+  claimHostBack,
   createSong,
   handleTxtImport,
   closeModal,

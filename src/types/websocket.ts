@@ -23,7 +23,9 @@ export type ClientMessage =
   | { type: "updateSong"; song: Song }
   | { type: "deleteSong" | "deleteSetlist"; id: string }
   | { type: "createSetlist"; name?: string; songs?: string[] }
-  | { type: "updateSetlist"; setlist: Setlist };
+  | { type: "updateSetlist"; setlist: Setlist }
+  | { type: "transferHost"; targetClientId: string }
+  | { type: "claimHost" };
 
 /** União tipada das notificações emitidas pelo servidor aos clientes. */
 export type ServerMessage =
@@ -34,9 +36,20 @@ export type ServerMessage =
       isHost: boolean;
       clientsCount: number;
       hostToken?: string;
+      clients?: Array<{ id: string; deviceName: string; isHost: boolean; role?: string | null }>;
     }
-  | { type: "clientsUpdate"; clientsCount: number }
+  | {
+      type: "clientsUpdate";
+      clientsCount: number;
+      clients?: Array<{ id: string; deviceName: string; isHost: boolean; role?: string | null }>;
+    }
   | { type: "newHost"; clientId: string; hostToken?: string }
+  | {
+      type: "hostTransferred";
+      previousHostId: string;
+      newHostId: string;
+      hostToken?: string;
+    }
   | { type: "stateSync"; state: SessionState; clientsCount: number }
   | {
       type: "songSelected";

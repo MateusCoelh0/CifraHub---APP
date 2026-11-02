@@ -85,6 +85,53 @@ export class SessionManager {
     }
   }
 
+  /** Retorna a lista resumida de clientes conectados para broadcast */
+  getClientSummaries(session: ManagedSession): Array<{ id: string; deviceName: string; isHost: boolean; role?: string | null }> {
+    return [...session.clients.values()].map((c) => ({
+      id: c.id,
+      deviceName: c.deviceName,
+      isHost: c.isHost,
+      role: c.bandRole ?? null,
+    }));
+  }
+
+  /** Transfere a liderança do palco (HOST) para outro dispositivo conectado */
+  transferHost(session: ManagedSession, requesterId: string, targetId: string, isAdmin: boolean): boolean {
+    const isCurrentHost = session.hostId === requesterId;
+    if (!isCurrentHost && !isAdmin) return false;
+    const target = session.clients.get(targetId);
+    if (!target) return false;
+
+    for (const client of session.clients.values()) {
+      client.isHost = false;
+    }
+
+    target.isHost = true;
+    session.hostId = target.id;
+    session.hostToken = randomUUID();
+    session.hostReclaimUntil = 0;
+    if (session.hostGraceTimer) clearTimeout(session.hostGraceTimer);
+    return true;
+  }
+
+  /** Permite ao ADMIN da banda retomar a liderança do palco */
+  claimHost(session: ManagedSession, requesterId: string, isAdmin: boolean): boolean {
+    if (!isAdmin) return false;
+    const requester = session.clients.get(requesterId);
+    if (!requester) return false;
+
+    for (const client of session.clients.values()) {
+      client.isHost = false;
+    }
+
+    requester.isHost = true;
+    session.hostId = requester.id;
+    session.hostToken = randomUUID();
+    session.hostReclaimUntil = 0;
+    if (session.hostGraceTimer) clearTimeout(session.hostGraceTimer);
+    return true;
+  }
+
   /** Remove dispositivo e elege outro integrante autorizado se o HOST sair.
    * @param session Sala da qual o dispositivo saiu.
    * @param clientId Identificador do cliente desconectado.
