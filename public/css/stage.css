@@ -116,7 +116,8 @@ body::before {
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: var(--shadow-sm);
 }
 
@@ -1008,3 +1009,6 @@ body::before {
     padding: 16px;
   }
 }
+
+#setlistsList { overflow-y: auto; max-height: 220px; padding: 2px; }
+.repertoire-wrap { display: flex; flex-direction: column; min-height: 160px; max-height: 48vh; }

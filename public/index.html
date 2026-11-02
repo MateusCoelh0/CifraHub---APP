@@ -155,9 +155,17 @@
           <div id="viewerBadge" class="role-badge" style="display: none">👁️ Visualizador</div>
         </div>
 
-        <div>
+        <div class="repertoire-wrap" style="display: flex; flex-direction: column; min-height: 180px; max-height: 48vh;">
           <div class="songs-header">
             <div class="songs-header-title" id="songsHeaderTitle">📚 Repertório</div>
+            <button
+              class="mini-btn accent"
+              id="newSongBtn"
+              onclick="showCreateSongModal()"
+              title="Adicionar nova música"
+            >
+              +
+            </button>
             <button
               class="mini-btn accent"
               id="addToSetlistBtn"

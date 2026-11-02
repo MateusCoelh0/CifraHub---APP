@@ -322,14 +322,40 @@ function activeBandId() {
 }
 
 // ═══════════════════════════ CONTROLES DO HOST ═══════════════════════════
+function selectSongLocal(song, index) {
+  appState.currentSong = song;
+  appState.currentSongIndex = index;
+  appState.transpose = 0;
+  appState.capotraste = 0;
+  const tSlider = document.getElementById("transposeSlider");
+  if (tSlider) tSlider.value = 0;
+  const cSlider = document.getElementById("capoSlider");
+  if (cSlider) cSlider.value = 0;
+  appState.scrollPosition = 0;
+  appState.isAutoScrolling = false;
+  const container = document.getElementById("cifraContainer");
+  if (container) container.scrollTop = 0;
+  updateUI();
+  renderCifra();
+}
+
 function selectSong(index) {
-  if (!appState.isHost) return;
   const song = appState.songs[index];
-  sendMessage({
-    type: "selectSong",
-    song: song,
-    index: index,
-  });
+  if (!song) return;
+  if (appState.isHost && appState.ws && appState.ws.readyState === 1) {
+    selectSongLocal(song, index);
+    sendMessage({
+      type: "selectSong",
+      song: song,
+      index: index,
+    });
+    return;
+  }
+  if (!appState.ws || appState.ws.readyState !== 1) {
+    selectSongLocal(song, index);
+    return;
+  }
+  showToast("⚠️ Apenas o Líder pode trocar a música");
 }
 
 function selectSetlist(id) {
@@ -341,21 +367,38 @@ function selectSetlist(id) {
   renderSetlists();
   updateSongsHeader();
 
-  if (appState.isHost) {
+  const firstSong = appState.songs.find((song) => song.id === setlist.songs[0]) ?? null;
+
+  if (appState.isHost && appState.ws && appState.ws.readyState === 1) {
     appState.currentSetlist = setlist;
     appState.currentSongIndex = 0;
-    appState.currentSong = appState.songs.find((song) => song.id === setlist.songs[0]) ?? null;
+    appState.currentSong = firstSong;
     appState.transpose = 0;
     appState.capotraste = 0;
     appState.scrollPosition = 0;
     appState.isAutoScrolling = false;
     appState.autoScrollSpeed = 0;
-    document.getElementById("cifraContainer").scrollTop = 0;
+    const container = document.getElementById("cifraContainer");
+    if (container) container.scrollTop = 0;
     updateUI();
+    renderCifra();
     sendMessage({
       type: "selectSetlist",
       setlist: setlist,
     });
+  } else if (!appState.ws || appState.ws.readyState !== 1) {
+    appState.currentSetlist = setlist;
+    appState.currentSongIndex = 0;
+    appState.currentSong = firstSong;
+    appState.transpose = 0;
+    appState.capotraste = 0;
+    appState.scrollPosition = 0;
+    appState.isAutoScrolling = false;
+    appState.autoScrollSpeed = 0;
+    const container = document.getElementById("cifraContainer");
+    if (container) container.scrollTop = 0;
+    updateUI();
+    renderCifra();
   }
 }
 
@@ -368,9 +411,14 @@ function clearSetlistFilter() {
 
 function updateSongsHeader() {
   const title = document.getElementById("songsHeaderTitle");
+  const newSongBtn = document.getElementById("newSongBtn");
   const addBtn = document.getElementById("addToSetlistBtn");
   const clearBtn = document.getElementById("clearSetlistFilterBtn");
   if (!title) return;
+
+  if (newSongBtn) {
+    newSongBtn.style.display = (!appState.viewingSetlistId && canEditLibrary()) ? "inline-block" : "none";
+  }
 
   if (appState.viewingSetlistId) {
     const sl = appState.setlists.find((s) => s.id === appState.viewingSetlistId);
@@ -389,75 +437,113 @@ function updateSongsHeader() {
 }
 
 function updateTranspose() {
-  if (!appState.isHost) return;
-  const value = Number.parseInt(document.getElementById("transposeSlider").value, 10) || 0;
+  const slider = document.getElementById("transposeSlider");
+  const value = Number.parseInt(slider?.value, 10) || 0;
   appState.transpose = value;
-  document.getElementById("transposeValue").textContent = value > 0 ? `+${value}` : String(value);
+  const valEl = document.getElementById("transposeValue");
+  if (valEl) valEl.textContent = value > 0 ? `+${value}` : String(value);
   renderCifra();
   updateSongMeta();
-  sendMessage({
-    type: "transpose",
-    value: value,
-  });
+  if (appState.isHost && appState.ws && appState.ws.readyState === 1) {
+    sendMessage({
+      type: "transpose",
+      value: value,
+    });
+  }
 }
 
 function transposeBy(delta) {
-  if (!appState.isHost) return;
   const value = appState.transpose + delta;
   if (value >= -12 && value <= 12) {
-    document.getElementById("transposeSlider").value = value;
+    const slider = document.getElementById("transposeSlider");
+    if (slider) slider.value = value;
     updateTranspose();
   }
 }
 
 function transposeReset() {
-  if (!appState.isHost) return;
-  document.getElementById("transposeSlider").value = 0;
+  const slider = document.getElementById("transposeSlider");
+  if (slider) slider.value = 0;
   updateTranspose();
 }
 
 function updateCapo() {
-  if (!appState.isHost) return;
-  const value = Number.parseInt(document.getElementById("capoSlider").value, 10) || 0;
+  const slider = document.getElementById("capoSlider");
+  const value = Number.parseInt(slider?.value, 10) || 0;
   appState.capotraste = value;
-  document.getElementById("capoValue").textContent = String(value);
+  const valEl = document.getElementById("capoValue");
+  if (valEl) valEl.textContent = String(value);
   renderCifra();
   updateSongMeta();
-  sendMessage({
-    type: "capotraste",
-    value: value,
-  });
+  if (appState.isHost && appState.ws && appState.ws.readyState === 1) {
+    sendMessage({
+      type: "capotraste",
+      value: value,
+    });
+  }
 }
 
 function updateAutoScroll() {
-  if (!appState.isHost) return;
-  const speed = Number.parseInt(document.getElementById("scrollSlider").value, 10) || 0;
+  const slider = document.getElementById("scrollSlider");
+  const speed = Number.parseInt(slider?.value, 10) || 0;
   appState.autoScrollSpeed = speed;
   appState.isAutoScrolling = speed > 0;
-  document.getElementById("scrollSpeed").textContent = String(speed);
+  const valEl = document.getElementById("scrollSpeed");
+  if (valEl) valEl.textContent = String(speed);
   startAutoScroll();
-  sendMessage({
-    type: "autoScroll",
-    speed: speed,
-  });
+  if (appState.isHost && appState.ws && appState.ws.readyState === 1) {
+    sendMessage({
+      type: "autoScroll",
+      speed: speed,
+    });
+  }
+}
+
+function getActiveSongList() {
+  if (appState.currentSetlist && appState.currentSetlist.songs && appState.currentSetlist.songs.length > 0) {
+    const list = appState.currentSetlist.songs
+      .map((id) => appState.songs.find((s) => s.id === id))
+      .filter(Boolean);
+    if (list.length > 0) return list;
+  }
+  return appState.songs;
 }
 
 function nextSong() {
-  if (!appState.isHost || !appState.currentSetlist) return;
-  sendMessage({ type: "nextSong" });
+  const songs = getActiveSongList();
+  if (songs.length <= 1) return;
+  const currentId = appState.currentSong?.id;
+  const currentIndex = currentId ? songs.findIndex((s) => s.id === currentId) : -1;
+  const nextIdx = currentIndex + 1;
+  if (nextIdx < songs.length) {
+    const targetSong = songs[nextIdx];
+    const realIdx = appState.songs.findIndex((s) => s.id === targetSong.id);
+    selectSong(realIdx >= 0 ? realIdx : nextIdx);
+  }
 }
 
 function previousSong() {
-  if (!appState.isHost || !appState.currentSetlist) return;
-  sendMessage({ type: "previousSong" });
+  const songs = getActiveSongList();
+  if (songs.length <= 1) return;
+  const currentId = appState.currentSong?.id;
+  const currentIndex = currentId ? songs.findIndex((s) => s.id === currentId) : -1;
+  const prevIdx = currentIndex - 1;
+  if (prevIdx >= 0) {
+    const targetSong = songs[prevIdx];
+    const realIdx = appState.songs.findIndex((s) => s.id === targetSong.id);
+    selectSong(realIdx >= 0 ? realIdx : prevIdx);
+  }
 }
 
 function toggleStageMode() {
-  if (!appState.isHost) return;
-  sendMessage({
-    type: "stageMode",
-    enabled: !appState.stageMode,
-  });
+  appState.stageMode = !appState.stageMode;
+  updateUI();
+  if (appState.isHost && appState.ws && appState.ws.readyState === 1) {
+    sendMessage({
+      type: "stageMode",
+      enabled: appState.stageMode,
+    });
+  }
 }
 
 function toggleViewerMode() {
@@ -773,11 +859,7 @@ function renderSongs() {
     div.className = "song-item" + (appState.currentSong?.id === song.id ? " active" : "");
     div.innerHTML = `<div class="song-title">${escapeHtml(song.title)}</div><div class="song-artist">${escapeHtml(song.artist || "")}</div>`;
     div.onclick = () => {
-      if (appState.isHost) {
-        selectSong(index);
-      } else {
-        showToast("⚠️ Apenas o Líder pode trocar a música");
-      }
+      selectSong(index);
     };
     wrapper.appendChild(div);
 
@@ -956,11 +1038,12 @@ function updateUI() {
     document.getElementById("roleDisplay").textContent = "VIEWER 👁️";
   }
 
-  const canPrev = appState.isHost && appState.currentSetlist && appState.currentSongIndex > 0;
-  const canNext =
-    appState.isHost &&
-    appState.currentSetlist &&
-    appState.currentSongIndex < appState.currentSetlist.songs.length - 1;
+  const activeList = getActiveSongList();
+  const currentPos = appState.currentSong
+    ? activeList.findIndex((s) => s.id === appState.currentSong.id)
+    : -1;
+  const canPrev = currentPos > 0;
+  const canNext = currentPos >= 0 && currentPos < activeList.length - 1;
   document.getElementById("prevBtn").disabled = !canPrev;
   document.getElementById("nextBtn").disabled = !canNext;
 
@@ -978,10 +1061,10 @@ function updateUI() {
 
   renderCifra();
 
-  const hostOnly = !appState.isHost;
-  document.getElementById("transposeSlider").disabled = hostOnly;
-  document.getElementById("capoSlider").disabled = hostOnly;
-  document.getElementById("scrollSlider").disabled = hostOnly;
+  // Sliders ficam livres para uso do usuario
+  document.getElementById("transposeSlider").disabled = false;
+  document.getElementById("capoSlider").disabled = false;
+  document.getElementById("scrollSlider").disabled = false;
 }
 
 function updateSongMeta() {
@@ -1228,11 +1311,14 @@ async function createSong(e) {
       method: "POST",
       body: { title, artist, key, tempo, cifra },
     });
-    appState.songs.push(result.data ?? result);
+    const createdSong = result.data ?? result;
+    appState.songs.push(createdSong);
     renderSongs();
     closeModal("createSongModal");
     document.querySelector("#createSongModal form").reset();
     showToast("Música adicionada.");
+    const newIdx = appState.songs.length - 1;
+    selectSong(newIdx);
   } catch (error) {
     showToast(error.message);
   }
@@ -1404,3 +1490,12 @@ Object.assign(window, {
 
 // Inicia a interface e verifica a conta antes de abrir qualquer sala.
 init();
+
+// Fechar modais ao clicar no fundo
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".modal").forEach((m) => {
+    m.addEventListener("click", (e) => {
+      if (e.target === m) m.classList.remove("active");
+    });
+  });
+});

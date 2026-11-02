@@ -110,6 +110,16 @@
       document.getElementById("joinSessionButton").disabled = state.sessions.length === 0;
       await window.CifraHubApp.setLibrary(songsResult.data ?? [], playlistsResult.data ?? []);
       showSessionCode("");
+      // Auto-conectar: entrar numa sessão existente ou criar uma nova
+      if (state.sessions.length > 0) {
+        const session = state.sessions[0];
+        state.activeSession = session;
+        document.getElementById("sessionSelector").value = session.id;
+        showSessionCode(session.code);
+        window.CifraHubApp.startAuthenticatedSession(session, band);
+      } else if (band.role !== "VIEWER") {
+        await startSession();
+      }
     } catch (error) {
       showFeedback(error.message, "error");
     }
