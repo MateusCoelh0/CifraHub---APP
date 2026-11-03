@@ -32,6 +32,7 @@ export const memberSchema = z
   .strict();
 export const songSchema = z
   .object({
+    id: z.string().uuid().optional(),
     title: plainText(200),
     artist: z
       .string()
@@ -82,3 +83,9 @@ export function validationMessage(error: z.ZodError): string {
     .map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`)
     .join("; ");
 }
+
+export const importCifraSchema = z
+  .object({
+    url: z.string().url().max(2000),
+  })
+  .strict();

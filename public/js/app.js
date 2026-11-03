@@ -134,7 +134,7 @@ function connectWebSocket() {
         appState.ws = socket;
       },
       onOpen: (socket) => {
-        console.log("✅ Conectado ao servidor");
+        console.log(" Conectado ao servidor");
         updateConnectionStatus("Conectado", "var(--success)");
         socket.send(JSON.stringify({ type: "setDeviceName", name: appState.deviceName }));
         socket.send(JSON.stringify({ type: "requestState" }));
@@ -147,11 +147,11 @@ function connectWebSocket() {
         }
       },
       onError: (error) => {
-        console.error("❌ Erro WebSocket:", error);
+        console.error("Erro WebSocket:", error);
         updateConnectionStatus("Erro", "var(--danger)");
       },
       onClose: (event) => {
-        console.log("🔌 Desconectado");
+        console.log("Desconectado");
         updateConnectionStatus("Desconectado", "#ff8800");
         if (event?.code === 1008) showToast("Código inválido ou sessão encerrada.");
       },
@@ -186,7 +186,7 @@ function handleMessage(message) {
       renderSongs();
       renderSetlists();
       updateUI();
-      showToast(`${message.isHost ? "🎸 Você é o Líder de Louvor" : "👁️ Você é um Visualizador"}`);
+      showToast(`${message.isHost ? "Você é o Líder de Louvor" : "Você é um Visualizador"}`);
       break;
 
     case "stateSync":
@@ -205,12 +205,12 @@ function handleMessage(message) {
     case "hostTransferred":
       if (message.newHostId === appState.clientId) {
         appState.isHost = true;
-        showToast("👑 Você agora é o Líder do Palco (Host)!");
+        showToast("Você agora é o Líder do Palco (Host)!");
       } else if (message.oldHostId === appState.clientId) {
         appState.isHost = false;
-        showToast(`👑 O controle do palco foi passado para ${message.newHostName ?? "outro integrante"}.`);
+        showToast(`O controle do palco foi passado para ${message.newHostName ?? "outro integrante"}.`);
       } else {
-        showToast(`👑 Novo líder do palco: ${message.newHostName ?? "Músico"}`);
+        showToast(`Novo líder do palco: ${message.newHostName ?? "Músico"}`);
       }
       if (message.clients) appState.connectedClients = message.clients;
       updateUI();
@@ -226,7 +226,7 @@ function handleMessage(message) {
           localStorage.setItem(`cifrahub_hostToken_${roomKey}`, message.hostToken);
         }
         updateUI();
-        showToast("🎸 Você é o novo Líder de Louvor!");
+        showToast("Você é o novo Líder de Louvor!");
       }
       break;
 
@@ -294,7 +294,7 @@ function handleMessage(message) {
       appState.songs.push(message.song);
       renderSongs();
       saveLocalData();
-      showToast("✅ Música adicionada");
+      showToast("Música adicionada com sucesso.");
       break;
 
     case "songUpdated":
@@ -308,14 +308,14 @@ function handleMessage(message) {
         renderSongs();
         saveLocalData();
       }
-      showToast("✅ Música atualizada");
+      showToast("Música atualizada com sucesso.");
       break;
 
     case "setlistCreated":
       appState.setlists.push(message.setlist);
       renderSetlists();
       saveLocalData();
-      showToast("✅ Setlist criada");
+      showToast("Setlist criada com sucesso.");
       break;
 
     case "setlistUpdated":
@@ -335,7 +335,7 @@ function handleMessage(message) {
       renderSetlists();
       renderSongs();
       saveLocalData();
-      showToast("✅ Setlist removida");
+      showToast(" Setlist removida");
       break;
 
     case "songDeleted":
@@ -349,7 +349,7 @@ function handleMessage(message) {
       renderSetlists();
       updateUI();
       saveLocalData();
-      showToast("🗑️ Música removida");
+      showToast("Música removida com sucesso.");
       break;
 
     case "operationError":
@@ -423,7 +423,7 @@ function selectSong(index) {
     selectSongLocal(song, index);
     return;
   }
-  showToast("⚠️ Apenas o Líder pode trocar a música");
+  showToast(" Apenas o Líder pode trocar a música");
 }
 
 function selectSetlist(id) {
@@ -491,14 +491,14 @@ function updateSongsHeader() {
   if (appState.viewingSetlistId) {
     const sl = appState.setlists.find((s) => s.id === appState.viewingSetlistId);
     if (sl) {
-      title.textContent = "📋 " + sl.name;
+      title.textContent = "Setlist: " + sl.name;
       title.classList.add("filtered");
       if (clearBtn) clearBtn.style.display = "inline-block";
       if (addBtn) addBtn.style.display = canEditLibrary() ? "inline-block" : "none";
       return;
     }
   }
-  title.textContent = "📚 Repertório";
+  title.textContent = "Repertório";
   title.classList.remove("filtered");
   if (clearBtn) clearBtn.style.display = "none";
   if (addBtn) addBtn.style.display = "none";
@@ -622,12 +622,12 @@ function toggleViewerMode() {
   localStorage.setItem("cifrahub_viewerMode", appState.viewerMode);
 }
 
-// 🎤 MODO CANTOR
+// MODO CANTOR
 function toggleSingerMode() {
   appState.singerMode = !appState.singerMode;
   const btn = document.getElementById("singerModeBtn");
   if (btn) {
-    btn.textContent = appState.singerMode ? "🎸 Cifra" : "🎤 Cantor";
+    btn.textContent = appState.singerMode ? " Cifra" : " Cantor";
     btn.classList.toggle("active");
   }
   const fontLabel = document.getElementById("fontSizeLabel");
@@ -637,10 +637,10 @@ function toggleSingerMode() {
   updateFontSizeDisplay();
   renderCifra();
   saveLocalData();
-  showToast(appState.singerMode ? "🎤 Modo Cantor ativado" : "🎸 Modo Cifra ativado");
+  showToast(appState.singerMode ? " Modo Cantor ativado" : " Modo Cifra ativado");
 }
 
-// 🔤 TAMANHO DA FONTE
+// TAMANHO DA FONTE
 function updateFontSize() {
   const slider = document.getElementById("fontSizeSlider");
   if (!slider) return;
@@ -687,41 +687,11 @@ function noteToIndex(note) {
   return -1;
 }
 
-function transposeNote(note, semitones) {
-  const idx = noteToIndex(note);
-  if (idx === -1) return note;
-  let newIdx = (idx + semitones) % 12;
-  if (newIdx < 0) newIdx += 12;
-  return CONFIG.NOTES[newIdx];
-}
-
 function transposeChord(chord, semitones) {
-  if (!chord || chord.length === 0 || semitones === 0) return chord;
-
-  const regex = /^([A-G])([#b]?)([^\/]*)(?:\/([A-G])([#b]?)(.*))?$/;
-  const match = chord.trim().match(regex);
-
-  if (!match) return chord;
-
-  const rootLetter = match[1];
-  const rootAccidental = match[2] || "";
-  const suffix = match[3] || "";
-  const bassLetter = match[4];
-  const bassAccidental = match[5] || "";
-  const bassSuffix = match[6] || "";
-
-  const rootNote = rootLetter + rootAccidental;
-  const newRoot = transposeNote(rootNote, semitones);
-
-  let result = newRoot + suffix;
-
-  if (bassLetter) {
-    const bassNote = bassLetter + bassAccidental;
-    const newBass = transposeNote(bassNote, semitones);
-    result += "/" + newBass + bassSuffix;
+  if (window.transporSemitons) {
+    return window.transporSemitons(chord, semitones, appState.currentSong?.key);
   }
-
-  return result;
+  return chord;
 }
 
 // ═══════════════════════════ RENDERIZAÇÃO DA CIFRA (ESTILO CIFRA CLUB) ═══════════════════════════
@@ -778,7 +748,11 @@ function renderCifra() {
     return;
   }
 
-  const cifraText = appState.currentSong.cifra || "";
+  let cifraText = appState.currentSong.cifra || "";
+  if (window.normalizarCifra) {
+    cifraText = window.normalizarCifra(cifraText);
+  }
+
   const totalShift = (appState.transpose || 0) - (appState.capotraste || 0);
   const isSinger = !!appState.singerMode;
 
@@ -791,59 +765,38 @@ function renderCifra() {
 
     // 1. Linha em branco
     if (!trimmed) {
-      htmlOutput.push('<span class="cifra-empty-line">\n</span>');
+      htmlOutput.push('<div class="cifra-line empty-line">&nbsp;</div>');
       continue;
     }
 
-    // 2. Tom da música (ex: Tom: G)
-    if (/^Tom:\s*[A-G]/i.test(trimmed)) {
-      if (isSinger) continue;
-      const transLine =
-        totalShift !== 0
-          ? trimmed.replace(/([A-G][#b]?m?)/g, (c) => transposeChord(c, totalShift))
-          : trimmed;
-      htmlOutput.push(`<span class="cifra-info">${escapeHtml(transLine)}</span>\n`);
+    // 2. Tablatura
+    if (/^\s*[eEaAdDgGbB1-6]\|/.test(line)) {
+      htmlOutput.push(`<div class="cifra-tablature">${escapeHtml(line)}</div>`);
       continue;
     }
 
-    // 3. Seção pura (ex: [Intro], [Refrão], [Verso 1], [Solo], [Final])
-    const sectionAlone = trimmed.match(/^\[([A-Za-zÀ-ÿ0-9\s\-_]+)\]$/);
-    if (sectionAlone) {
-      htmlOutput.push(`<span class="cifra-section">[${escapeHtml(sectionAlone[1])}]</span>\n`);
+    // 3. Marcador de seção (ex: [Intro], [Refrão], [Primeira Parte])
+    const sectionMatch = trimmed.match(/^\[([A-Za-zÀ-ÿ0-9\s\-_]+)\]$/);
+    if (sectionMatch) {
+      htmlOutput.push(`<div class="cifra-section">${escapeHtml(sectionMatch[1])}</div>`);
       continue;
     }
 
-    // 4. Seção com acordes na mesma linha (ex: [Intro] E A D B7)
-    const sectionWithChords = line.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_]+\])\s*(.*)$/);
-    if (sectionWithChords && isChordLine(sectionWithChords[2])) {
-      if (isSinger) continue;
-      const sec = `<span class="cifra-section">${escapeHtml(sectionWithChords[1])}</span> `;
-      const chords = wrapChordsInLine(sectionWithChords[2], totalShift);
-      htmlOutput.push(sec + chords + "\n");
-      continue;
-    }
-
-    // 5. Linha de acordes tradicional (acima da letra, com espaços - formato nativo Cifra Club)
-    if (isChordLine(line)) {
-      if (isSinger) continue;
-      htmlOutput.push(wrapChordsInLine(line, totalShift) + "\n");
-      continue;
-    }
-
-    // 6. Linha com acordes embutidos no texto [C]Texto
-    if (/\[([A-G][^\]]*)\]/.test(line)) {
-      if (isSinger) {
-        const cleanLyric = line.replace(/\[[^\]]+\]/g, "").trim();
-        if (cleanLyric) {
-          htmlOutput.push(`<span class="cifra-lyric-line">${escapeHtml(cleanLyric)}</span>\n`);
-        }
-        continue;
+    // 4. Modo Cantor: só letra sem acordes
+    if (isSinger) {
+      const cleanLyric = line.replace(/\[[^\]]+\]/g, "").trim();
+      if (cleanLyric) {
+        htmlOutput.push(`<div class="cifra-line singer-line">${escapeHtml(cleanLyric)}</div>`);
       }
+      continue;
+    }
 
-      // Converte acordes embutidos para o alinhamento monoespaçado do Cifra Club
+    // 5. Linha contendo acordes inline [Acorde]Letra
+    if (/\[([^\]]+)\]/.test(line)) {
+      // Separar em blocos [Acorde] e texto
       let chordLine = "";
       let lyricLine = "";
-      const regex = /\[([A-G][^\]]*)\]|([^\[]+)/g;
+      const regex = /\[([^\]]+)\]|([^\[]+)/g;
       let match;
 
       while ((match = regex.exec(line)) !== null) {
@@ -866,13 +819,16 @@ function renderCifra() {
         }
       }
 
-      htmlOutput.push(wrapChordsInLine(chordLine, 0) + "\n");
-      htmlOutput.push(escapeHtml(lyricLine) + "\n");
+      // Renderizar par com acordes perfeitamente alinhados no topo e letra embaixo
+      const wrappedChordLine = wrapChordsInLine(chordLine, 0);
+      htmlOutput.push(
+        `<div class="cifra-pair"><div class="cifra-chord-row">${wrappedChordLine}</div><div class="cifra-lyric-row">${escapeHtml(lyricLine || " ")}</div></div>`
+      );
       continue;
     }
 
-    // 7. Linha de letra comum
-    htmlOutput.push(escapeHtml(line) + "\n");
+    // 6. Linha normal de texto puro
+    htmlOutput.push(`<div class="cifra-line">${escapeHtml(line)}</div>`);
   }
 
   container.className = "cifra-sheet" + (isSinger ? " singer-mode" : "");
@@ -933,13 +889,49 @@ function renderSongs() {
     wrapper.appendChild(div);
 
     if (filteredSetlist && canEditLibrary()) {
+      const actionGroup = document.createElement("div");
+      actionGroup.className = "song-item-actions";
+      actionGroup.style.cssText = "display: flex; gap: 4px; align-items: center;";
+
+      const songIdxInSetlist = filteredSetlist.songs.indexOf(song.id);
+
+      if (songIdxInSetlist > 0) {
+        const upBtn = document.createElement("button");
+        upBtn.className = "setlist-reorder-btn";
+        upBtn.textContent = "▲";
+        upBtn.title = "Mover para cima";
+        upBtn.onclick = (e) => {
+          e.stopPropagation();
+          void moveSongInSetlist(filteredSetlist.id, song.id, -1);
+        };
+        actionGroup.appendChild(upBtn);
+      }
+
+      if (songIdxInSetlist >= 0 && songIdxInSetlist < filteredSetlist.songs.length - 1) {
+        const downBtn = document.createElement("button");
+        downBtn.className = "setlist-reorder-btn";
+        downBtn.textContent = "▼";
+        downBtn.title = "Mover para baixo";
+        downBtn.onclick = (e) => {
+          e.stopPropagation();
+          void moveSongInSetlist(filteredSetlist.id, song.id, 1);
+        };
+        actionGroup.appendChild(downBtn);
+      }
+
       const removeBtn = document.createElement("button");
       removeBtn.className = "song-item-remove";
-      removeBtn.textContent = "✕";
+      removeBtn.textContent = "X";
       removeBtn.title = "Remover desta setlist";
       removeBtn.onclick = (e) => {
         e.stopPropagation();
         const newSongs = filteredSetlist.songs.filter((sid) => sid !== song.id);
+        void window.CifraHubApi.request(`/api/bands/${activeBandId()}/playlists/${filteredSetlist.id}`, {
+          method: "PUT",
+          body: { name: filteredSetlist.name, songs: newSongs },
+        });
+        filteredSetlist.songs = newSongs;
+        renderSongs();
         sendMessage({
           type: "updateSetlist",
           setlist: {
@@ -948,8 +940,10 @@ function renderSongs() {
             songs: newSongs,
           },
         });
+        showToast("Música removida da setlist.");
       };
-      wrapper.appendChild(removeBtn);
+      actionGroup.appendChild(removeBtn);
+      wrapper.appendChild(actionGroup);
     }
 
     list.appendChild(wrapper);
@@ -958,9 +952,18 @@ function renderSongs() {
 
 function renderSetlists() {
   const list = document.getElementById("setlistsList");
+  if (!list) return;
   list.innerHTML = "";
   const createButton = document.getElementById("createSetlistButton");
   if (createButton) createButton.hidden = !canEditLibrary();
+
+  if (appState.setlists.length === 0) {
+    const emptyDiv = document.createElement("div");
+    emptyDiv.style.cssText = "color: var(--text-muted); font-size: 13px; text-align: center; padding: 16px 8px; line-height: 1.5;";
+    emptyDiv.textContent = "Nenhum setlist. Crie o primeiro para o seu culto ou show.";
+    list.appendChild(emptyDiv);
+    return;
+  }
 
   appState.setlists.forEach((setlist) => {
     const isActiveSetlist =
@@ -982,13 +985,13 @@ function renderSetlists() {
     const editBtn = document.createElement("button");
     editBtn.className = "btn";
     editBtn.style.cssText = "flex: 1; font-size: 11px; padding: 5px; justify-content: center;";
-    editBtn.textContent = "✎ Editar";
+    editBtn.textContent = "Editar";
     editBtn.onclick = (e) => {
       e.stopPropagation();
       if (canEditLibrary()) {
         showEditSetlistModal(setlist.id);
       } else {
-        showToast("⚠️ Seu papel não permite editar este repertório");
+        showToast("Seu papel não permite editar este repertório.");
       }
     };
 
@@ -1004,7 +1007,7 @@ function renderSetlists() {
           void deleteSetlist(setlist.id);
         }
       } else {
-        showToast("⚠️ Seu papel não permite editar este repertório");
+        showToast("Seu papel não permite editar este repertório.");
       }
     };
 
@@ -1035,11 +1038,10 @@ function updateUI() {
   if (appState.currentSong) {
     document.getElementById("currentSongTitle").textContent = appState.currentSong.title;
     const totalShift = (appState.transpose || 0) - (appState.capotraste || 0);
-    let keyDisplay = appState.currentSong.key || "";
-    if (keyDisplay && totalShift !== 0) {
-      const transKey = transposeChord(keyDisplay, totalShift);
-      keyDisplay = `${transKey} (Original: ${appState.currentSong.key})`;
-    }
+    const origKey = appState.currentSong.key || "C";
+    const currentKey = totalShift !== 0 ? transposeChord(origKey, totalShift) : origKey;
+    const shiftLabel = totalShift !== 0 ? ` (${totalShift > 0 ? "+" : ""}${totalShift})` : "";
+    const keyDisplay = `${currentKey}${shiftLabel}`;
     const artist = appState.currentSong.artist ? `${appState.currentSong.artist} • ` : "";
     const tempo = appState.currentSong.tempo ? ` • ${appState.currentSong.tempo} BPM` : "";
     const meta = document.getElementById("currentSongMeta");
@@ -1081,7 +1083,7 @@ function updateUI() {
 
   const singerBtn = document.getElementById("singerModeBtn");
   if (singerBtn) {
-    singerBtn.textContent = appState.singerMode ? "🎸 Cifra" : "🎤 Cantor";
+    singerBtn.textContent = appState.singerMode ? " Cifra" : " Cantor";
     singerBtn.classList.toggle("active", appState.singerMode);
   }
 
@@ -1100,11 +1102,11 @@ function updateUI() {
   if (appState.isHost) {
     document.getElementById("hostBadge").style.display = "block";
     document.getElementById("viewerBadge").style.display = "none";
-    document.getElementById("roleDisplay").textContent = "LÍDER 🎸";
+    document.getElementById("roleDisplay").textContent = "LÍDER ";
   } else {
     document.getElementById("hostBadge").style.display = "none";
     document.getElementById("viewerBadge").style.display = "block";
-    document.getElementById("roleDisplay").textContent = "VIEWER 👁️";
+    document.getElementById("roleDisplay").textContent = "VIEWER ";
   }
 
   const activeList = getActiveSongList();
@@ -1182,7 +1184,7 @@ function showCreateSetlistModal() {
   if (!canEditLibrary()) return;
   appState.editingSetlist = null;
   const title = document.getElementById("createSetlistModal").querySelector(".modal-title");
-  title.textContent = "📋 Nova Setlist";
+  title.textContent = "Nova Setlist";
   document.getElementById("newSetlistName").value = "";
   const checkboxDiv = document.getElementById("setlistSongsCheckbox");
   checkboxDiv.innerHTML = "";
@@ -1190,13 +1192,13 @@ function showCreateSetlistModal() {
   if (!appState.songs || appState.songs.length === 0) {
     const emptyMsg = document.createElement("div");
     emptyMsg.style.cssText = "color: var(--text-muted); font-size: 13px; text-align: center; padding: 14px 8px; line-height: 1.5;";
-    emptyMsg.innerHTML = "⚠️ Nenhuma música cadastrada no repertório.<br><small>Adicione músicas ao repertório da banda antes de criar uma setlist.</small>";
+    emptyMsg.innerHTML = " Nenhuma música cadastrada no repertório.<br><small>Adicione músicas ao repertório da banda antes de criar uma setlist.</small>";
     checkboxDiv.appendChild(emptyMsg);
   } else {
     appState.songs.forEach((song) => {
       const label = document.createElement("label");
       label.style.cssText =
-        "display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; color: var(--text-primary); font-size: 13px; background: white; border: 1px solid var(--border-light); border-radius: 8px;";
+        "display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; min-height: 48px; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 14px; background: white; border: 1px solid var(--border-light); border-radius: 10px; transition: all 0.15s ease;";
       
       const leftSpan = document.createElement("span");
       leftSpan.style.cssText = "display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;";
@@ -1233,7 +1235,7 @@ function showEditSetlistModal(id) {
 
   appState.editingSetlist = setlist;
   const title = document.getElementById("createSetlistModal").querySelector(".modal-title");
-  title.textContent = "✎ Editar Setlist";
+  title.textContent = "Editar Setlist";
   document.getElementById("newSetlistName").value = setlist.name;
   const checkboxDiv = document.getElementById("setlistSongsCheckbox");
   checkboxDiv.innerHTML = "";
@@ -1241,13 +1243,13 @@ function showEditSetlistModal(id) {
   if (!appState.songs || appState.songs.length === 0) {
     const emptyMsg = document.createElement("div");
     emptyMsg.style.cssText = "color: var(--text-muted); font-size: 13px; text-align: center; padding: 14px 8px; line-height: 1.5;";
-    emptyMsg.innerHTML = "⚠️ Nenhuma música cadastrada no repertório.";
+    emptyMsg.innerHTML = " Nenhuma música cadastrada no repertório.";
     checkboxDiv.appendChild(emptyMsg);
   } else {
     appState.songs.forEach((song) => {
       const label = document.createElement("label");
       label.style.cssText =
-        "display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; color: var(--text-primary); font-size: 13px; background: white; border: 1px solid var(--border-light); border-radius: 8px;";
+        "display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; min-height: 48px; margin-bottom: 8px; cursor: pointer; color: var(--text-primary); font-size: 14px; background: white; border: 1px solid var(--border-light); border-radius: 10px; transition: all 0.15s ease;";
       
       const leftSpan = document.createElement("span");
       leftSpan.style.cssText = "display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;";
@@ -1330,7 +1332,7 @@ function renderMusiciansModal() {
 
     const icon = document.createElement("div");
     icon.className = "musician-icon";
-    icon.textContent = client.isHost ? "🎸" : (client.isAnonymous ? "👁️" : "👤");
+    icon.textContent = client.isHost ? "" : (client.isAnonymous ? "" : "");
 
     const details = document.createElement("div");
     details.style.cssText = "min-width: 0; flex: 1;";
@@ -1355,7 +1357,7 @@ function renderMusiciansModal() {
       const btnPass = document.createElement("button");
       btnPass.type = "button";
       btnPass.className = "btn-transfer-host";
-      btnPass.textContent = "👑 Passar Host";
+      btnPass.textContent = "Passar Host";
       btnPass.onclick = () => transferHostTo(client.clientId);
       card.appendChild(btnPass);
     }
@@ -1364,12 +1366,107 @@ function renderMusiciansModal() {
   });
 }
 
+
+async function importCifraFromUrl(mode = "create") {
+  const isEdit = mode === "edit";
+  const urlInput = document.getElementById(isEdit ? "editCifraClubUrlInput" : "cifraClubUrlInput");
+  const url = (urlInput?.value || "").trim();
+
+  if (!url) {
+    showToast("Cole o link da música no Cifra Club.");
+    return;
+  }
+
+  if (!url.includes("cifraclub.com")) {
+    showToast("O link deve ser do Cifra Club (ex: https://www.cifraclub.com.br/...).");
+    return;
+  }
+
+  const btn = isEdit ? null : document.getElementById("importCifraClubBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Importando...";
+  }
+
+  try {
+    const result = await window.CifraHubApi.request("/api/import-cifra", {
+      method: "POST",
+      body: { url },
+    });
+
+    const data = result.data || result;
+    if (isEdit) {
+      if (data.title) document.getElementById("editSongTitle").value = data.title;
+      if (data.artist) document.getElementById("editSongArtist").value = data.artist;
+      if (data.key) document.getElementById("editSongKey").value = data.key;
+      if (data.tempo) document.getElementById("editSongTempo").value = data.tempo;
+      if (data.cifra) document.getElementById("editSongCifra").value = data.cifra;
+    } else {
+      if (data.title) document.getElementById("newSongTitle").value = data.title;
+      if (data.artist) document.getElementById("newSongArtist").value = data.artist;
+      if (data.key) document.getElementById("newSongKey").value = data.key;
+      if (data.tempo) document.getElementById("newSongTempo").value = data.tempo;
+      if (data.cifra) document.getElementById("newSongCifra").value = data.cifra;
+    }
+
+    showToast("Cifra importada com sucesso. Revise antes de salvar.");
+  } catch (error) {
+    showToast(error.message || "Falha ao importar do Cifra Club. Cole o texto manualmente.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Importar Link";
+    }
+  }
+}
+
+function confirmSignOut() {
+  if (confirm("Deseja realmente sair da sua conta?")) {
+    if (window.signOut) {
+      window.signOut();
+    } else {
+      document.getElementById("logoutButton")?.click();
+    }
+  }
+}
+
+async function moveSongInSetlist(setlistId, songId, direction) {
+  const setlist = appState.setlists.find((s) => s.id === setlistId);
+  if (!setlist) return;
+  const idx = setlist.songs.indexOf(songId);
+  if (idx === -1) return;
+  const targetIdx = idx + direction;
+  if (targetIdx < 0 || targetIdx >= setlist.songs.length) return;
+
+  const newSongs = [...setlist.songs];
+  const [removed] = newSongs.splice(idx, 1);
+  newSongs.splice(targetIdx, 0, removed);
+
+  try {
+    await window.CifraHubApi.request(`/api/bands/${activeBandId()}/playlists/${setlist.id}`, {
+      method: "PUT",
+      body: { name: setlist.name, songs: newSongs },
+    });
+    setlist.songs = newSongs;
+    renderSongs();
+    if (appState.ws && appState.ws.readyState === 1) {
+      sendMessage({
+        type: "updateSetlist",
+        setlist: { id: setlist.id, name: setlist.name, songs: newSongs },
+      });
+    }
+    showToast("Ordem da setlist atualizada.");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
 function showSettingsModal() {
   document.getElementById("deviceNameInput").value = appState.deviceName;
   document.getElementById("clientIdDisplay").value = appState.clientId;
   document.getElementById("serverAddress").textContent = window.location.hostname;
   document.getElementById("serverStatus").textContent =
-    appState.ws?.readyState === 1 ? "✅ Conectado" : "❌ Desconectado";
+    appState.ws?.readyState === 1 ? " Conectado" : " Desconectado";
   document.getElementById("settingsModal").classList.add("active");
 }
 
@@ -1380,7 +1477,7 @@ function closeModal(id) {
 // ═══════════════════════════ ADICIONAR MÚSICAS À SETLIST ═══════════════════════════
 function showAddToSetlistModal() {
   if (!canEditLibrary()) {
-    showToast("⚠️ Seu papel não permite editar este repertório");
+    showToast("Seu papel não permite editar este repertório.");
     return;
   }
   if (!appState.viewingSetlistId) return;
@@ -1424,7 +1521,7 @@ function confirmAddToSetlist() {
   ).map((cb) => cb.value);
 
   if (checked.length === 0) {
-    showToast("⚠️ Selecione pelo menos uma música");
+    showToast(" Selecione pelo menos uma música");
     return;
   }
 
@@ -1452,7 +1549,7 @@ function confirmAddToSetlist() {
 // ═══════════════════════════ REMOVER MÚSICA ═══════════════════════════
 async function deleteCurrentSong() {
   if (!canEditLibrary() || !appState.currentSong) {
-    showToast("⚠️ Selecione uma música primeiro");
+    showToast(" Selecione uma música primeiro");
     return;
   }
   if (
@@ -1491,37 +1588,80 @@ function handleTxtImport(event) {
   reader.onload = (e) => {
     const raw = String(e.target.result || "");
     document.getElementById("newSongCifra").value = raw;
-    showToast("✅ TXT importado com sucesso");
+    showToast("Arquivo importado com sucesso.");
   };
   reader.readAsText(file, "utf-8");
   event.target.value = "";
 }
 
+let isCreatingSong = false;
+
 async function createSong(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
+  if (isCreatingSong) return;
   if (!canEditLibrary()) return;
 
-  const title = document.getElementById("newSongTitle").value;
-  const artist = document.getElementById("newSongArtist").value;
-  const key = document.getElementById("newSongKey").value;
-  const tempo = parseInt(document.getElementById("newSongTempo").value) || 120;
-  const cifra = document.getElementById("newSongCifra").value;
+  const titleInput = document.getElementById("newSongTitle");
+  const artistInput = document.getElementById("newSongArtist");
+  const keyInput = document.getElementById("newSongKey");
+  const tempoInput = document.getElementById("newSongTempo");
+  const cifraInput = document.getElementById("newSongCifra");
+  const saveBtn = document.getElementById("saveNewSongBtn");
+
+  const title = (titleInput?.value || "").trim();
+  const artist = (artistInput?.value || "").trim();
+  const key = keyInput?.value || "C";
+  const tempo = parseInt(tempoInput?.value, 10) || 120;
+  let cifra = cifraInput?.value || "";
+
+  if (!title) {
+    showToast("Por favor, preencha o título da música.");
+    return;
+  }
+
+  if (window.normalizarCifra) {
+    cifra = window.normalizarCifra(cifra);
+  }
+
+  isCreatingSong = true;
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Criando...";
+  }
+
+  const clientSongId = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : undefined;
 
   try {
     const result = await window.CifraHubApi.request(`/api/bands/${activeBandId()}/songs`, {
       method: "POST",
-      body: { title, artist, key, tempo, cifra },
+      body: { id: clientSongId, title, artist, key, tempo, cifra },
     });
     const createdSong = result.data ?? result;
-    appState.songs.push(createdSong);
+
+    const existingIdx = appState.songs.findIndex((s) => s.id === createdSong.id);
+    if (existingIdx !== -1) {
+      appState.songs[existingIdx] = createdSong;
+    } else {
+      appState.songs.push(createdSong);
+    }
+
     renderSongs();
     closeModal("createSongModal");
-    document.querySelector("#createSongModal form").reset();
-    showToast("Música adicionada.");
-    const newIdx = appState.songs.length - 1;
-    selectSong(newIdx);
+    document.getElementById("createSongForm")?.reset();
+    showToast("Música criada com sucesso.");
+
+    const newIdx = appState.songs.findIndex((s) => s.id === createdSong.id);
+    if (newIdx !== -1) {
+      selectSong(newIdx);
+    }
   } catch (error) {
-    showToast(error.message);
+    showToast(error.message || "Falha ao criar música.");
+  } finally {
+    isCreatingSong = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Criar Música";
+    }
   }
 }
 
@@ -1561,7 +1701,7 @@ async function createSetlist(e) {
 
   const name = document.getElementById("newSetlistName").value;
   if (!name.trim()) {
-    showToast("❌ Nome da setlist não pode ser vazio");
+    showToast("O nome da setlist não pode ser vazio.");
     return;
   }
 
@@ -1684,6 +1824,9 @@ Object.assign(window, {
   showEditSongModal,
   deleteCurrentSong,
   showSettingsModal,
+  importCifraFromUrl,
+  confirmSignOut,
+  moveSongInSetlist,
   showMusiciansModal,
   transferHostTo,
   claimHostBack,

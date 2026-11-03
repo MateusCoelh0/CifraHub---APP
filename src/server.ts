@@ -1,3 +1,4 @@
+import { extrairCifraClub } from "./utils/cifraUtils.js";
 import "dotenv/config";
 import "express-async-errors";
 import cors from "cors";
@@ -132,6 +133,20 @@ function configureHttpApplication(): void {
   app.get("/legacy", (_request, response) =>
     response.sendFile(join(directory, "..", "index.html")),
   );
+  app.post("/api/import-cifra", async (req, res) => {
+    try {
+      const { url } = req.body ?? {};
+      if (!url || typeof url !== "string") {
+        res.status(400).json({ success: false, error: "Link do Cifra Club obrigatório." });
+        return;
+      }
+      const data = await extrairCifraClub(url.trim());
+      res.json({ success: true, data });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message || "Falha ao importar cifra." });
+    }
+  });
+
   app.use("/api/auth", authRoutes);
   app.use(
     "/api/bands",

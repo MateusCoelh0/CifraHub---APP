@@ -74,6 +74,7 @@
   }
 
   function signOut() {
+    if (!confirm("Deseja realmente sair da sua conta?")) return;
     localStorage.removeItem(window.CifraHubApi.tokenKey);
     context.token = null;
     context.user = null;

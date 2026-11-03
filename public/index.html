@@ -17,7 +17,7 @@
       aria-labelledby="authTitle"
     >
       <section class="auth-card glass-strong">
-        <div class="auth-brand"><span class="auth-mark">♪</span><span>CifraHub</span></div>
+        <div class="auth-brand"><span class="auth-mark">CH</span><span>CifraHub</span></div>
         <h1 id="authTitle">Seu repertório, no ritmo da banda.</h1>
         <p class="auth-intro">Entre na sua conta ou acesse uma sessão como convidado.</p>
         <div class="auth-segmented" role="tablist" aria-label="Forma de acesso">
@@ -100,7 +100,7 @@
       <div class="sidebar glass">
         <div class="sheet-handle" aria-hidden="true"></div>
         <div class="logo">
-          <div class="logo-icon">♪</div>
+          <div class="logo-icon">CH</div>
           <div>
             <div class="logo-text">CifraHub</div>
             <div class="logo-sub">Louvor & Adoração</div>
@@ -133,19 +133,19 @@
           </div>
           <div class="status-item" id="connectedMusiciansTrigger" style="cursor: pointer;" title="Ver músicos conectados na sessão" onclick="showMusiciansModal()">
             <span class="status-label">Músicos</span>
-            <span class="status-value" id="clientsCount" style="color: var(--gold); font-weight: 700;">0 👥</span>
+            <span class="status-value" id="clientsCount" style="color: var(--gold); font-weight: 700;">0 </span>
           </div>
           <div class="status-item">
             <span class="status-label">Função</span>
             <span class="status-value" id="roleDisplay">-</span>
           </div>
-          <div id="hostBadge" class="role-badge host" style="display: none">🎸 Líder de Louvor</div>
-          <div id="viewerBadge" class="role-badge" style="display: none">👁️ Visualizador</div>
+          <div id="hostBadge" class="role-badge host" style="display: none">Líder de Louvor</div>
+          <div id="viewerBadge" class="role-badge" style="display: none">Visualizador</div>
         </div>
 
         <div class="repertoire-wrap" style="display: flex; flex-direction: column; min-height: 180px; max-height: 48vh;">
           <div class="songs-header">
-            <div class="songs-header-title" id="songsHeaderTitle">📚 Repertório</div>
+            <div class="songs-header-title" id="songsHeaderTitle">Repertório</div>
             <button
               class="mini-btn accent"
               id="newSongBtn"
@@ -170,7 +170,7 @@
               style="display: none"
               title="Ver todas as músicas"
             >
-              ✕
+              X
             </button>
           </div>
           <input
@@ -184,7 +184,7 @@
         </div>
 
         <div class="setlist-section-wrap">
-          <div class="section-title" style="padding-left: 4px">📋 Setlists</div>
+          <div class="section-title" style="padding-left: 4px">Setlists</div>
           <div id="setlistsList"></div>
           <button
             class="btn"
@@ -212,15 +212,15 @@
             <div class="song-meta" id="currentSongMeta">Toque para começar</div>
           </div>
           <div class="header-controls">
-            <button class="btn" id="prevBtn" onclick="previousSong()" disabled>◀ Anterior</button>
-            <button class="btn" id="nextBtn" onclick="nextSong()" disabled>Próxima ▶</button>
+            <button class="btn" id="prevBtn" onclick="previousSong()" disabled>Anterior</button>
+            <button class="btn" id="nextBtn" onclick="nextSong()" disabled>Próxima</button>
             <button
               class="btn accent"
               id="singerModeBtn"
               onclick="toggleSingerMode()"
               title="Modo Cantor - só letra"
             >
-              🎤 Cantor
+              Cantor
             </button>
             <button
               class="btn accent"
@@ -228,7 +228,7 @@
               onclick="toggleViewerMode()"
               style="display: none"
             >
-              👁️ Ver apenas
+              Ver apenas
             </button>
             <button
               class="btn accent"
@@ -236,11 +236,11 @@
               onclick="toggleViewerMode()"
               style="display: none"
             >
-              🎛️ Controles
+              Controles
             </button>
-            <button class="btn accent" id="tunerBtn" onclick="window.CifraHubTuner ? window.CifraHubTuner.open() : null" title="Afinador digital de instrumentos">🎯 Afinador</button>
+            <button class="btn accent" id="tunerBtn" onclick="window.CifraHubTuner ? window.CifraHubTuner.open() : null" title="Afinador digital de instrumentos">Afinador</button>
             <button class="btn-primary" id="stageModeBtn" onclick="toggleStageMode()">
-              ⬤ Palco
+              Palco
             </button>
           </div>
         </div>
@@ -258,7 +258,7 @@
         </button>
         <!-- TRANSPOSIÇÃO -->
         <div class="control-group">
-          <div class="control-title">🎹 Transposição</div>
+          <div class="control-title">Transposição</div>
           <div class="control-row">
             <span class="control-label">Semitom</span>
             <span class="control-value" id="transposeValue">0</span>
@@ -303,7 +303,7 @@
 
         <!-- CAPOTRASTE -->
         <div class="control-group">
-          <div class="control-title">🎸 Capotraste</div>
+          <div class="control-title">Capotraste</div>
           <div class="control-row">
             <span class="control-label">Traste</span>
             <span class="control-value" id="capoValue">0</span>
@@ -322,7 +322,7 @@
 
         <!-- AUTO-SCROLL -->
         <div class="control-group">
-          <div class="control-title">📜 Auto-Scroll</div>
+          <div class="control-title">Auto-Scroll</div>
           <div class="control-row">
             <span class="control-label">Velocidade</span>
             <span class="control-value" id="scrollSpeed">0</span>
@@ -341,7 +341,7 @@
 
         <!-- TAMANHO DA FONTE -->
         <div class="control-group">
-          <div class="control-title">🔤 Tamanho da Fonte</div>
+          <div class="control-title">Tamanho da Fonte</div>
           <div class="control-row">
             <span class="control-label" id="fontSizeLabel">Normal</span>
             <span class="control-value" id="fontSizeValue">16px</span>
@@ -369,14 +369,14 @@
             background: transparent;
           "
         >
-          <div class="control-title">⚙️ Gerenciar repertório</div>
+          <div class="control-title">Gerenciar Repertório</div>
           <button
             class="btn-primary"
             id="createSongBtn"
             style="width: 100%; margin-bottom: 6px; justify-content: center"
             onclick="showCreateSongModal()"
           >
-            ✝ Nova Música
+            Nova Música
           </button>
           <button
             class="btn"
@@ -384,7 +384,7 @@
             style="width: 100%; margin-bottom: 6px; justify-content: center"
             onclick="showEditSongModal()"
           >
-            ✎ Editar Música
+            Editar Música
           </button>
           <button
             class="btn"
@@ -397,7 +397,7 @@
             "
             onclick="deleteCurrentSong()"
           >
-            🗑 Remover Música
+            Remover Música
           </button>
         </div>
 
@@ -413,7 +413,7 @@
             "
             onclick="showSettingsModal()"
           >
-            ⚙ Configurações
+            Configurações
           </button>
         </div>
       </div>
@@ -423,10 +423,10 @@
     <!-- Modal: Criar Música -->
     <div class="modal" id="createSongModal">
       <div class="modal-content">
-        <div class="modal-title">✝ Nova Música</div>
-        <form onsubmit="createSong(event)">
+        <div class="modal-title">Nova Música</div>
+        <form id="createSongForm">
           <div class="form-group">
-            <label class="form-label">Título</label>
+            <label class="form-label" for="newSongTitle">Título</label>
             <input
               type="text"
               class="form-input"
@@ -436,16 +436,11 @@
             />
           </div>
           <div class="form-group">
-            <label class="form-label">Artista</label>
-            <input
-              type="text"
-              class="form-input"
-              id="newSongArtist"
-              placeholder="Nome do artista"
-            />
+            <label class="form-label" for="newSongArtist">Artista</label>
+            <input type="text" class="form-input" id="newSongArtist" placeholder="Nome do artista" />
           </div>
           <div class="form-group">
-            <label class="form-label">Tom Original</label>
+            <label class="form-label" for="newSongKey">Tom Original</label>
             <select class="select-input" id="newSongKey">
               <option>C</option>
               <option>C#</option>
@@ -474,7 +469,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Andamento (BPM)</label>
+            <label class="form-label" for="newSongTempo">Andamento (BPM)</label>
             <input
               type="number"
               class="form-input"
@@ -484,18 +479,30 @@
             />
           </div>
           <div class="form-group">
-            <label class="form-label">Cifra</label>
-            <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap">
+            <label class="form-label">Importar Cifra</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+              <input
+                type="url"
+                id="cifraClubUrlInput"
+                class="form-input"
+                style="flex: 1; min-width: 200px;"
+                placeholder="https://www.cifraclub.com.br/artista/musica/"
+              />
               <button
                 type="button"
-                class="mini-btn accent"
+                id="importCifraClubBtn"
+                class="btn"
+                onclick="importCifraFromUrl()"
+              >
+                Importar Link
+              </button>
+              <button
+                type="button"
+                class="btn"
                 onclick="document.getElementById('txtImportInput').click()"
               >
-                📁 Importar .txt
+                Importar .txt
               </button>
-              <span style="font-size: 11px; color: var(--text-muted); align-self: center"
-                >Aceita cifras copiadas direto do Cifra Club ou no formato [C]Letra</span
-              >
             </div>
             <input
               type="file"
@@ -504,24 +511,15 @@
               style="display: none"
               onchange="handleTxtImport(event)"
             />
+            <label class="form-label" for="newSongCifra" style="margin-top: 6px;">Cifra</label>
             <textarea
               class="form-textarea"
               id="newSongCifra"
-              placeholder="Cole sua cifra direto do Cifra Club ou no formato [C]Letra...&#10;&#10;Exemplo Cifra Club:&#10;G                    D/F#&#10;Seu sangue sobre mim, Senhor&#10;Em                 C&#10;A Tua graça me alcançou"
+              placeholder="Cole sua cifra direto do Cifra Club ou no formato [C]Letra..."
               required
             ></textarea>
           </div>
-                  <div style="border-top: 1px solid var(--border-light); margin-top: 16px; padding-top: 14px;">
-          <button
-            class="btn"
-            id="logoutButton"
-            type="button"
-            style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); font-weight: 600;"
-          >
-            🚪 Sair da Conta
-          </button>
-        </div>
-        <div class="modal-buttons" style="margin-top: 12px;">
+          <div class="modal-buttons" style="margin-top: 16px;">
             <button
               type="button"
               class="btn"
@@ -530,124 +528,16 @@
             >
               Cancelar
             </button>
-            <button type="submit" class="btn-save">Criar Música</button>
+            <button type="submit" id="saveNewSongBtn" class="btn-save">Criar Música</button>
           </div>
         </form>
-      </div>
-    </div>
-
-    <!-- Modal: Editar Música -->
-    <div class="modal" id="editSongModal">
-      <div class="modal-content">
-        <div class="modal-title">✎ Editar Música</div>
-        <form onsubmit="updateSong(event)">
-          <div class="form-group">
-            <label class="form-label">Título</label>
-            <input type="text" class="form-input" id="editSongTitle" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Artista</label>
-            <input type="text" class="form-input" id="editSongArtist" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tom Original</label>
-            <select class="select-input" id="editSongKey">
-              <option>C</option>
-              <option>C#</option>
-              <option>D</option>
-              <option>D#</option>
-              <option>E</option>
-              <option>F</option>
-              <option>F#</option>
-              <option>G</option>
-              <option>G#</option>
-              <option>A</option>
-              <option>A#</option>
-              <option>B</option>
-              <option>Cm</option>
-              <option>C#m</option>
-              <option>Dm</option>
-              <option>D#m</option>
-              <option>Em</option>
-              <option>Fm</option>
-              <option>F#m</option>
-              <option>Gm</option>
-              <option>G#m</option>
-              <option>Am</option>
-              <option>A#m</option>
-              <option>Bm</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Andamento (BPM)</label>
-            <input type="number" class="form-input" id="editSongTempo" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Cifra</label>
-            <textarea
-              class="form-textarea"
-              id="editSongCifra"
-              placeholder="Cole sua cifra direto do Cifra Club ou no formato [C]Letra..."
-              required
-            ></textarea>
-          </div>
-          <div class="modal-buttons">
-            <button
-              type="button"
-              class="btn"
-              style="justify-content: center"
-              onclick="closeModal('editSongModal')"
-            >
-              Cancelar
-            </button>
-            <button type="submit" class="btn-save">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal: Adicionar Músicas à Setlist -->
-    <div class="modal" id="addToSetlistModal">
-      <div class="modal-content">
-        <div class="modal-title">➕ Adicionar Músicas à Setlist</div>
-        <div
-          id="addToSetlistInfo"
-          style="color: var(--gold); font-size: 13px; margin-bottom: 12px; font-weight: 500"
-        ></div>
-        <div class="form-group">
-          <label class="form-label">Músicas disponíveis no repertório</label>
-          <div
-            id="addToSetlistCheckbox"
-            style="
-              max-height: 360px;
-              overflow-y: auto;
-              border: 1px solid var(--border-light);
-              padding: 12px;
-              border-radius: 12px;
-              background: #fafaf8;
-            "
-          ></div>
-        </div>
-        <div class="modal-buttons">
-          <button
-            type="button"
-            class="btn"
-            style="justify-content: center"
-            onclick="closeModal('addToSetlistModal')"
-          >
-            Cancelar
-          </button>
-          <button type="button" class="btn-save" onclick="confirmAddToSetlist()">
-            Adicionar Selecionadas
-          </button>
-        </div>
       </div>
     </div>
 
     <!-- Modal: Criar Setlist -->
     <div class="modal" id="createSetlistModal">
       <div class="modal-content">
-        <div class="modal-title">📋 Nova Setlist</div>
+        <div class="modal-title">Nova Setlist</div>
         <form onsubmit="createSetlist(event)">
           <div class="form-group">
             <label class="form-label">Nome da Setlist</label>
@@ -692,7 +582,7 @@
     <!-- Modal: Afinador Digital de Cordas -->
     <div class="modal" id="tunerModal">
       <div class="modal-content tuner-modal-content">
-        <div class="modal-title" style="margin-bottom: 14px;">🎯 Afinador Digital</div>
+        <div class="modal-title" style="margin-bottom: 14px;">Afinador Digital</div>
         
         <div class="tuner-instrument-selector">
           <button type="button" class="tuner-instrument-btn active" data-instrument="guitar" onclick="window.CifraHubTuner.setInstrument('guitar')">Violão / Guitarra</button>
@@ -734,14 +624,14 @@
     <!-- Modal: Músicos na Sessão e Transferência de Host -->
     <div class="modal" id="musiciansModal">
       <div class="modal-content" style="max-width: 440px;">
-        <div class="modal-title">👥 Músicos Conectados</div>
+        <div class="modal-title">Músicos Conectados</div>
         <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
           Integrantes acompanhando o palco nesta sessão.
         </p>
 
         <div id="claimHostBanner" style="display: none; margin-bottom: 12px;">
           <button type="button" class="btn-primary" style="width: 100%; justify-content: center;" onclick="claimHostBack()">
-            👑 Assumir Controle do Palco (Host)
+            Assumir Controle do Palco
           </button>
         </div>
 
@@ -758,9 +648,9 @@
     <!-- Modal: Configurações -->
     <div class="modal" id="settingsModal">
       <div class="modal-content">
-        <div class="modal-title">⚙️ Configurações</div>
+        <div class="modal-title">Configurações</div>
         <div class="form-group">
-          <label class="form-label">Nome do Dispositivo</label>
+          <label class="form-label" for="deviceNameInput">Nome do Dispositivo</label>
           <input
             type="text"
             class="form-input"
@@ -769,7 +659,7 @@
           />
         </div>
         <div class="form-group">
-          <label class="form-label">ID do Cliente</label>
+          <label class="form-label" for="clientIdDisplay">ID do Cliente</label>
           <input
             type="text"
             class="form-input"
@@ -795,6 +685,31 @@
             <div>Latência: <span id="latency" style="font-weight: 600">-ms</span></div>
           </div>
         </div>
+
+        <div style="border-top: 1px solid var(--border-light); margin: 18px 0 14px; padding-top: 14px;">
+          <button
+            class="btn"
+            id="logoutButton"
+            type="button"
+            style="width: 100%; justify-content: center; background: rgba(239, 68, 68, 0.08); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); font-weight: 600; min-height: 44px;"
+            onclick="confirmSignOut()"
+          >
+            Sair da Conta
+          </button>
+        </div>
+
+        <div class="modal-buttons">
+          <button
+            type="button"
+            class="btn"
+            style="justify-content: center; flex: 1; min-height: 44px;"
+            onclick="closeModal('settingsModal')"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
         <div class="modal-buttons">
           <button
             type="button"
@@ -810,17 +725,17 @@
 
     <nav class="mobile-dock" aria-label="Controles rápidos de palco">
       <button type="button" id="dockAutoScroll" aria-label="Iniciar ou pausar rolagem">
-        ▶<span>Rolar</span>
+        <span>Rolar</span>
       </button>
       <button type="button" id="dockTransposeDown" aria-label="Baixar um semitom">−1</button>
-      <button type="button" id="dockTuner" onclick="window.CifraHubTuner ? window.CifraHubTuner.open() : null" aria-label="Afinador">🎯<span>Afinação</span></button>
+      <button type="button" id="dockTuner" onclick="window.CifraHubTuner ? window.CifraHubTuner.open() : null" aria-label="Afinador"><span>Afinador</span></button>
       <button type="button" id="dockStageMode" aria-label="Ativar modo palco">Palco</button>
       <button type="button" id="dockTransposeUp" aria-label="Subir um semitom">+1</button>
       <button type="button" id="dockControls" aria-label="Abrir controles de palco">
-        ⚙<span>Ajustes</span>
+        <span>Ajustes</span>
       </button>
       <button type="button" id="dockLibrary" aria-label="Abrir repertório">
-        ☰<span>Repertório</span>
+        <span>Repertório</span>
       </button>
     </nav>
     <div class="font-size-dock" aria-label="Ajuste do tamanho da cifra">
@@ -829,6 +744,7 @@
     </div>
     <button class="focus-restore" id="focusRestoreButton" type="button">Mostrar controles</button>
 
+    <script src="/js/cifraUtils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/websocket.js"></script>
     <script src="/js/bands.js"></script>

@@ -611,7 +611,7 @@ body::before {
   white-space: pre-wrap;
 }
 
-/* 🎤 MODO CANTOR (Foco apenas na letra) */
+/* MODO CANTOR (Foco apenas na letra) */
 .cifra-sheet.singer-mode {
   font-family:
     "Inter",
@@ -1348,4 +1348,182 @@ body::before {
 .btn-transfer-host:hover {
   background: var(--gold);
   color: white;
+}
+
+
+/* ═══════════════ USABILIDADE REPERTÓRIO E SETLISTS (ALVOS >= 48PX) ═══════════════ */
+.song-item-wrapper {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.song-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+  flex: 1;
+}
+
+.song-item:hover {
+  background: var(--gold-bg);
+  border-color: var(--gold-border);
+}
+
+.song-item.active {
+  background: var(--gold-bg-hover);
+  border-color: var(--gold-border);
+}
+
+.song-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.song-artist {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.setlist-item {
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border-light);
+  background: white;
+}
+
+.setlist-item:hover {
+  background: var(--gold-bg);
+  border-color: var(--gold-border);
+}
+
+.setlist-item.active {
+  background: var(--gold-bg-hover);
+  border-color: var(--gold-border);
+}
+
+.setlist-reorder-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: white;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.setlist-reorder-btn:hover {
+  background: var(--gold-bg);
+  color: var(--gold);
+  border-color: var(--gold-border);
+}
+
+.song-item-remove {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.05);
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.song-item-remove:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* ═══════════════ RENDERIZAÇÃO DE CIFRA (ACORDES SOBRE LETRAS) ═══════════════ */
+.cifra-pair {
+  margin-bottom: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.cifra-chord-row {
+  color: #b45309;
+  font-weight: 700;
+  white-space: pre;
+  line-height: 1.2;
+  font-size: 0.95em;
+}
+
+.cifra-lyric-row {
+  white-space: pre-wrap;
+  line-height: 1.4;
+  color: var(--text-primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.cifra-chord {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.cifra-section {
+  font-weight: 700;
+  color: #b45309;
+  margin: 16px 0 6px;
+  font-size: 1.05em;
+  border-left: 3px solid #eab308;
+  padding-left: 8px;
+  letter-spacing: 0.5px;
+}
+
+.cifra-tablature {
+  font-family: ui-monospace, monospace;
+  white-space: pre;
+  overflow-x: auto;
+  color: #4b5563;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin: 8px 0;
+  border: 1px solid var(--border-light);
+}
+
+.cifra-line {
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.cifra-line.empty-line {
+  height: 12px;
+}
+
+.cifra-line.singer-line {
+  font-size: 1.15em;
+  font-weight: 500;
+  line-height: 1.6;
 }

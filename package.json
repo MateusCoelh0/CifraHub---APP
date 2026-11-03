@@ -15,6 +15,8 @@
     "db:set-owner-password": "tsx scripts/seed-owner.ts",
     "db:migrate-session-codes": "node scripts/migrate-session-codes.js",
     "test:api": "node scripts/test-api.js",
+    "test:cifra": "node scripts/test-cifra.js",
+    "db:deduplicate": "node scripts/run-deduplicate.js",
     "db:check": "node scripts/check-db.js",
     "db:import-legacy": "node scripts/import-legacy-data.js"
   },

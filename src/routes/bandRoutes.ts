@@ -207,6 +207,7 @@ export function createBandRoutes(
     async (req, res) => {
       try {
         const song = req.body as {
+          id?: string;
           title?: string;
           artist?: string;
           key?: string;
@@ -218,6 +219,7 @@ export function createBandRoutes(
           return;
         }
         const created = await createSong(req.params.bandId, req.user!.id, {
+          id: song.id,
           title: song.title.trim(),
           artist: song.artist ?? "",
           key: song.key ?? "C",
