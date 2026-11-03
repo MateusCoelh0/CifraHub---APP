@@ -664,8 +664,10 @@ body.auth-locked #container {
     min-width: 100%;
     font-size: var(--mobile-cifra-size, 16px);
     line-height: 1.65;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, monospace !important;
+    overflow-wrap: break-word;
   }
 
   .workspace-panel {

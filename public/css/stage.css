@@ -566,14 +566,13 @@ body::before {
 }
 
 .cifra-sheet {
-  font-family:
-    "SF Mono", "Roboto Mono", "Fira Code", "Cascadia Code", "Courier New", Consolas, monospace !important;
+  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, "SF Mono", monospace !important;
   font-size: 17px;
-  line-height: 1.8;
+  line-height: 1.7;
   color: #18181b;
   white-space: pre-wrap !important;
-  overflow-wrap: anywhere;
-  word-break: normal;
+  word-break: break-word !important;
+  overflow-wrap: break-word;
   font-variant-ligatures: none;
   tab-size: 4;
   background: #ffffff;
@@ -1490,22 +1489,25 @@ body::before {
 /* ═══════════════ RENDERIZAÇÃO DE CIFRA (ACORDES SOBRE LETRAS) ═══════════════ */
 .cifra-pair {
   margin-bottom: 8px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .cifra-chord-row {
   color: #b45309;
   font-weight: 700;
   white-space: pre;
-  line-height: 1.2;
+  word-break: break-word;
+  line-height: 1.25;
   font-size: 0.95em;
+  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .cifra-lyric-row {
   white-space: pre-wrap;
-  line-height: 1.4;
+  word-break: break-word;
+  line-height: 1.45;
   color: var(--text-primary);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .cifra-chord {
@@ -1537,7 +1539,10 @@ body::before {
 
 .cifra-line {
   margin-bottom: 4px;
-  line-height: 1.4;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .cifra-line.empty-line {

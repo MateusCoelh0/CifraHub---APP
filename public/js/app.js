@@ -794,6 +794,17 @@ function renderCifra() {
 
     // 5. Linha contendo acordes inline [Acorde]Letra
     if (/\[([^\]]+)\]/.test(line)) {
+      // Linha composta unicamente por acordes (ex: [G] [D] [Am] [C])
+      const withoutBrackets = line.replace(/\[[^\]]+\]/g, "");
+      if (!withoutBrackets.trim()) {
+        const chordLineRaw = line.replace(/\[([^\]]+)\]/g, (m, c) => {
+          return totalShift !== 0 ? transposeChord(c, totalShift) : c;
+        });
+        const wrappedChordLine = wrapChordsInLine(chordLineRaw, 0);
+        htmlOutput.push(`<div class="cifra-line cifra-chord-row">${wrappedChordLine}</div>`);
+        continue;
+      }
+
       // Separar em blocos [Acorde] e texto
       let chordLine = "";
       let lyricLine = "";
