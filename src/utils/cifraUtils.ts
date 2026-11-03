@@ -315,6 +315,118 @@ export function normalizarCifra(textoBruto: string): string {
     .trim();
 }
 
+import http2 from "node:http2";
+
+/**
+ * Realiza requisição HTTP/2 direta com cabeçalhos de navegador modernos
+ * para contornar bloqueios WAF/Akamai/Cloudflare do Cifra Club.
+ */
+export async function fetchCifraClubHtml(targetUrl: string, redirectCount = 0): Promise<string> {
+  if (redirectCount > 5) {
+    throw new Error("Muitos redirecionamentos ao acessar o Cifra Club.");
+  }
+  const parsed = new URL(targetUrl);
+  return new Promise<string>((resolve, reject) => {
+    let client: http2.ClientHttp2Session | null = null;
+    let finished = false;
+
+    const timeout = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        try {
+          client?.destroy();
+        } catch {}
+        reject(new Error("Tempo limite esgotado ao acessar o Cifra Club. Tente colar a cifra manualmente."));
+      }
+    }, 9000);
+
+    try {
+      client = http2.connect(`https://${parsed.hostname}`);
+    } catch (err: any) {
+      clearTimeout(timeout);
+      return reject(new Error(`Falha ao conectar com o Cifra Club: ${err.message}`));
+    }
+
+    client.on("error", (err) => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timeout);
+        try {
+          client?.destroy();
+        } catch {}
+        reject(err);
+      }
+    });
+
+    const path = parsed.pathname + (parsed.search || "");
+    const req = client.request({
+      [http2.constants.HTTP2_HEADER_METHOD]: "GET",
+      [http2.constants.HTTP2_HEADER_PATH]: path,
+      [http2.constants.HTTP2_HEADER_AUTHORITY]: parsed.hostname,
+      [http2.constants.HTTP2_HEADER_SCHEME]: "https",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+      "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+      "sec-fetch-dest": "document",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-site": "none",
+      "sec-fetch-user": "?1",
+      "upgrade-insecure-requests": "1",
+    });
+
+    let statusCode = 200;
+    let locationHeader: string | undefined;
+    req.on("response", (headers) => {
+      const status = headers[http2.constants.HTTP2_HEADER_STATUS];
+      statusCode = typeof status === "number" ? status : parseInt(String(status), 10) || 200;
+      const loc = headers.location;
+      if (loc) {
+        locationHeader = Array.isArray(loc) ? loc[0] : loc;
+      }
+    });
+
+    let data = "";
+    req.on("data", (chunk: Buffer | string) => {
+      data += chunk;
+    });
+
+    req.on("end", () => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timeout);
+        try {
+          client?.close();
+        } catch {}
+
+        if ((statusCode === 301 || statusCode === 302 || statusCode === 307 || statusCode === 308) && locationHeader) {
+          const redirectUrl = new URL(locationHeader, targetUrl).toString();
+          return resolve(fetchCifraClubHtml(redirectUrl, redirectCount + 1));
+        }
+
+        if (statusCode >= 400) {
+          reject(new Error(`O Cifra Club retornou status ${statusCode}. Verifique se a música existe.`));
+        } else {
+          resolve(data);
+        }
+      }
+    });
+
+    req.on("error", (err) => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timeout);
+        try {
+          client?.destroy();
+        } catch {}
+        reject(err);
+      }
+    });
+
+    req.end();
+  });
+}
+
 /**
  * Importa e extrai cifra do Cifra Club a partir de uma URL.
  */
@@ -346,40 +458,38 @@ export async function extrairCifraClub(urlStr: string): Promise<{
     throw new Error("O link fornecido não pertence ao Cifra Club (cifraclub.com.br).");
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-  let response: Response;
+  let html: string;
   try {
-    response = await fetch(parsedUrl.toString(), {
-      signal: controller.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 CifraHub/1.0",
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-      },
-    });
+    html = await fetchCifraClubHtml(parsedUrl.toString());
   } catch (err: any) {
-    if (err.name === "AbortError") {
-      throw new Error("Tempo limite esgotado ao acessar o Cifra Club. Tente colar a cifra manualmente.");
+    // Fallback secundário usando fetch comum caso HTTP/2 falhe
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const res = await fetch(parsedUrl.toString(), {
+        signal: controller.signal,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "pt-BR,pt;q=0.9",
+        },
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        throw new Error(`O Cifra Club retornou status ${res.status}.`);
+      }
+      html = await res.text();
+    } catch {
+      throw err;
     }
-    throw new Error(`Falha de conexão com o Cifra Club: ${err.message}`);
-  } finally {
-    clearTimeout(timeoutId);
   }
-
-  if (!response.ok) {
-    throw new Error(`O Cifra Club retornou status ${response.status}. Verifique se a música existe.`);
-  }
-
-  const html = await response.text();
 
   // Extrair título
   let title = "";
   const titleMatch =
-    html.match(/<h1[^>]*class="[^"]*(?:t-title|t1)[^"]*"[^>]*>([\s\S]*?)<\/h1>/i) ||
-    html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) ||
+    html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
+    html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
     html.match(/<title>([\s\S]*?)<\/title>/i);
   if (titleMatch) {
     title = cleanHtmlEntities(titleMatch[1].replace(/<[^>]+>/g, "")).trim();
@@ -393,18 +503,29 @@ export async function extrairCifraClub(urlStr: string): Promise<{
 
   // Extrair artista
   let artist = "";
-  const artistMatch =
-    html.match(/<h2[^>]*class="[^"]*(?:t-artist|t2)[^"]*"[^>]*>([\s\S]*?)<\/h2>/i) ||
-    html.match(/<a[^>]*class="[^"]*(?:t-artist|t2)[^"]*"[^>]*>([\s\S]*?)<\/a>/i);
-  if (artistMatch) {
-    artist = cleanHtmlEntities(artistMatch[1].replace(/<[^>]+>/g, "")).trim();
+  const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i);
+  if (ogTitleMatch) {
+    const parts = ogTitleMatch[1].split(" - ");
+    if (parts.length > 1) {
+      artist = cleanHtmlEntities(parts[1].split("|")[0].replace(/Cifra Club/i, "")).trim();
+    }
+  }
+  if (!artist) {
+    const artistMatch =
+      html.match(/<h2[^>]*class=["'][^"']*(?:t-artist|c-artist|artist)[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i) ||
+      html.match(/<a[^>]*class=["'][^"']*(?:t-artist|c-artist|artist)[^"']*["'][^>]*>([\s\S]*?)<\/a>/i);
+    if (artistMatch) {
+      artist = cleanHtmlEntities(artistMatch[1].replace(/<[^>]+>/g, "")).trim();
+    }
   }
 
   // Extrair tom
   let key = "C";
   const keyMatch =
-    html.match(/id="cifra_tom"[^>]*>[\s\S]*?<a[^>]*>([A-G][#b]?m?)<\/a>/i) ||
-    html.match(/id="cifra_tom"[^>]*>([^<]+)</i) ||
+    html.match(/Tom\s*=\s*([A-G][#b]?m?)/i) ||
+    html.match(/id=["']cifra_tom["'][^>]*>[\s\S]*?<a[^>]*>([A-G][#b]?m?)<\/a>/i) ||
+    html.match(/id=["']cifra_tom["'][^>]*>([^<]+)</i) ||
+    html.match(/data-key=["']([A-G][#b]?m?)["']/i) ||
     html.match(/Tom:\s*<b>([A-G][#b]?m?)<\/b>/i) ||
     html.match(/Tom:\s*([A-G][#b]?m?)/i);
   if (keyMatch) {
@@ -415,12 +536,16 @@ export async function extrairCifraClub(urlStr: string): Promise<{
   let rawCifra = "";
   const preMatch =
     html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i) ||
-    html.match(/<div[^>]*class="[^"]*cifra_cnt[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    html.match(/<div[^>]*class=["'][^"']*cifra_cnt[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
 
   if (preMatch) {
     let preContent = preMatch[1];
     // Decodificar entidades e remover tags HTML preservando texto e quebras
     rawCifra = cleanHtmlEntities(preContent.replace(/<[^>]+>/g, ""));
+    // Limpar zero-width spaces e artefatos de formatação do Cifra Club novo
+    rawCifra = rawCifra.replace(/[\u200B-\u200D\uFEFF]/g, "");
+    rawCifra = rawCifra.replace(/^[ \t]*Tom\s*=\s*[^\r\n]*[\r\n]*/gim, "");
+    rawCifra = rawCifra.replace(/^[ \t]*Intro\s*=\s*/gim, "Intro: ");
   }
 
   if (!rawCifra.trim()) {

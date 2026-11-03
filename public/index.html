@@ -534,6 +534,94 @@
       </div>
     </div>
 
+    <!-- Modal: Editar Música -->
+    <div class="modal" id="editSongModal">
+      <div class="modal-content">
+        <div class="modal-title">Editar Música</div>
+        <form onsubmit="updateSong(event)">
+          <div class="form-group">
+            <label class="form-label" for="editSongTitle">Título</label>
+            <input type="text" class="form-input" id="editSongTitle" placeholder="Nome da música" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editSongArtist">Artista</label>
+            <input type="text" class="form-input" id="editSongArtist" placeholder="Nome do artista" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editSongKey">Tom Original</label>
+            <select class="select-input" id="editSongKey">
+              <option>C</option>
+              <option>C#</option>
+              <option>D</option>
+              <option>D#</option>
+              <option>E</option>
+              <option>F</option>
+              <option>F#</option>
+              <option>G</option>
+              <option>G#</option>
+              <option>A</option>
+              <option>A#</option>
+              <option>B</option>
+              <option>Cm</option>
+              <option>C#m</option>
+              <option>Dm</option>
+              <option>D#m</option>
+              <option>Em</option>
+              <option>Fm</option>
+              <option>F#m</option>
+              <option>Gm</option>
+              <option>G#m</option>
+              <option>Am</option>
+              <option>A#m</option>
+              <option>Bm</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="editSongTempo">Andamento (BPM)</label>
+            <input type="number" class="form-input" id="editSongTempo" placeholder="120" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Importar Cifra</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+              <input
+                type="url"
+                id="editCifraClubUrlInput"
+                class="form-input"
+                style="flex: 1; min-width: 200px;"
+                placeholder="https://www.cifraclub.com.br/artista/musica/"
+              />
+              <button
+                type="button"
+                id="editImportCifraClubBtn"
+                class="btn"
+                onclick="importCifraFromUrl('edit')"
+              >
+                Importar Link
+              </button>
+            </div>
+            <label class="form-label" for="editSongCifra" style="margin-top: 6px;">Cifra</label>
+            <textarea
+              class="form-textarea"
+              id="editSongCifra"
+              placeholder="Cole sua cifra direto do Cifra Club ou no formato [C]Letra..."
+              required
+            ></textarea>
+          </div>
+          <div class="modal-buttons" style="margin-top: 16px;">
+            <button
+              type="button"
+              class="btn"
+              style="justify-content: center"
+              onclick="closeModal('editSongModal')"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn-save">Salvar Alterações</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal: Criar Setlist -->
     <div class="modal" id="createSetlistModal">
       <div class="modal-content">
@@ -709,17 +797,6 @@
           </button>
         </div>
       </div>
-    </div>
-        <div class="modal-buttons">
-          <button
-            type="button"
-            class="btn"
-            style="justify-content: center; flex: 1"
-            onclick="closeModal('settingsModal')"
-          >
-            Fechar
-          </button>
-        </div>
       </div>
     </div>
 

@@ -312,21 +312,25 @@ body.auth-locked #container {
 }
 
 .container.stage-mode .header {
-  position: fixed;
-  z-index: 60;
-  top: max(10px, env(safe-area-inset-top));
-  right: 12px;
-  left: 12px;
-  padding: 8px;
+  position: relative;
+  z-index: 10;
+  padding: 12px 18px;
   background: transparent;
   box-shadow: none;
 }
-.container.stage-mode .song-header,
-.container.stage-mode .header-controls > :not(#prevBtn):not(#nextBtn):not(#stageModeBtn) {
-  display: none !important;
+.container.stage-mode .song-header {
+  display: flex !important;
 }
 .container.stage-mode .header-controls {
   justify-content: flex-end;
+}
+
+/* Ocultação minimalista completa para o Modo Cantor */
+.container.singer-mode .header-controls > :not(#singerModeBtn) {
+  display: none !important;
+}
+.container.singer-mode .mobile-dock {
+  display: none !important;
 }
 .repertoire-search {
   width: calc(100% - 20px);
@@ -338,14 +342,7 @@ body.auth-locked #container {
   background: rgba(255, 255, 255, 0.82);
   color: var(--text-primary);
 }
-.song-meta.bpm-pulse {
-  animation: bpm-pulse var(--bpm-duration, 1s) ease-in-out infinite;
-}
-@keyframes bpm-pulse {
-  50% {
-    opacity: 0.58;
-  }
-}
+/* Animação bpm-pulse desativada para manter cabeçalho estático e estável */
 
 .repertoire-search {
   width: calc(100% - 20px);

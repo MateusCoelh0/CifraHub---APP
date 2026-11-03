@@ -68,13 +68,35 @@ body::before {
   z-index: 1;
 }
 
+/* Visão Função Palco: Letra limpa (sem acordes) + controles operacionais fixos na lateral direita */
 .container.stage-mode {
+  grid-template-columns: 1fr 290px;
+}
+
+.container.stage-mode .sidebar {
+  display: none !important;
+}
+
+.container.stage-mode .panel-right {
+  display: flex !important;
+}
+
+.container.stage-mode .cifra-chord {
+  display: none !important;
+}
+
+/* Visão Função Cantor: Modo minimalista total, apenas a letra da música */
+.container.singer-mode {
   grid-template-columns: 1fr;
 }
 
-.container.stage-mode .sidebar,
-.container.stage-mode .panel-right {
-  display: none;
+.container.singer-mode .sidebar,
+.container.singer-mode .panel-right {
+  display: none !important;
+}
+
+.container.singer-mode .cifra-chord {
+  display: none !important;
 }
 
 .container.viewer-mode {

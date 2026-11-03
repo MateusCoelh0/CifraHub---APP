@@ -635,6 +635,7 @@ function toggleSingerMode() {
   if (fontLabel) fontLabel.textContent = appState.singerMode ? "Cantor" : "Normal";
   if (slider) slider.value = appState.singerMode ? appState.singerFontSize : appState.fontSize;
   updateFontSizeDisplay();
+  updateUI();
   renderCifra();
   saveLocalData();
   showToast(appState.singerMode ? " Modo Cantor ativado" : " Modo Cifra ativado");
@@ -1046,9 +1047,7 @@ function updateUI() {
     const tempo = appState.currentSong.tempo ? ` • ${appState.currentSong.tempo} BPM` : "";
     const meta = document.getElementById("currentSongMeta");
     meta.textContent = `${artist}Tom: ${keyDisplay}${tempo}`;
-    const bpm = Number(appState.currentSong.tempo) || 0;
-    meta.style.setProperty("--bpm-duration", bpm ? `${60 / bpm}s` : "1s");
-    meta.classList.toggle("bpm-pulse", bpm > 0);
+
   } else {
     document.getElementById("currentSongTitle").textContent = "Selecione uma música";
     const meta = document.getElementById("currentSongMeta");
@@ -1069,6 +1068,12 @@ function updateUI() {
     container.classList.add("stage-mode");
   } else {
     container.classList.remove("stage-mode");
+  }
+
+  if (appState.singerMode) {
+    container.classList.add("singer-mode");
+  } else {
+    container.classList.remove("singer-mode");
   }
 
   if (appState.viewerMode) {
@@ -1382,7 +1387,7 @@ async function importCifraFromUrl(mode = "create") {
     return;
   }
 
-  const btn = isEdit ? null : document.getElementById("importCifraClubBtn");
+  const btn = isEdit ? document.getElementById("editImportCifraClubBtn") : document.getElementById("importCifraClubBtn");
   if (btn) {
     btn.disabled = true;
     btn.textContent = "Importando...";
