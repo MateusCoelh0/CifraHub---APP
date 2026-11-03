@@ -20,8 +20,8 @@ import { WebSocketSessionService } from "./ws/websocketServer.js";
 
 const HTTP_PORT = Number(process.env.PORT ?? 3000);
 const REQUEST_WINDOW_MS = 15 * 60 * 1000;
-const API_REQUEST_LIMIT = 100;
-const AUTH_REQUEST_LIMIT = 8;
+const API_REQUEST_LIMIT = process.env.NODE_ENV === "production" ? 100 : 5000;
+const AUTH_REQUEST_LIMIT = process.env.NODE_ENV === "production" ? 100 : 1000;
 const directory = dirname(fileURLToPath(import.meta.url));
 const publicDirectory = join(directory, "..", "public");
 const app = express();
