@@ -566,9 +566,9 @@ body::before {
 }
 
 .cifra-sheet {
-  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, "SF Mono", monospace !important;
-  font-size: 17px;
-  line-height: 1.7;
+  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, Monaco, monospace !important;
+  font-size: 16px;
+  line-height: 1.5;
   color: #18181b;
   white-space: pre-wrap !important;
   word-break: break-word !important;
@@ -587,64 +587,49 @@ body::before {
 }
 
 .cifra-chord {
-  color: #996515;
+  color: #d97706;
   font-weight: 700;
-  display: inline-block;
-  letter-spacing: 0.01em;
+  display: inline !important;
+  letter-spacing: normal;
   transition: color 0.15s;
 }
 
 .cifra-chord:hover {
-  color: #d97706;
+  color: #b45309;
 }
 
 .cifra-section {
-  color: #71717a;
+  color: #b45309;
   font-weight: 700;
   font-size: 0.95em;
-  display: inline-block;
-  margin-top: 10px;
-  margin-bottom: 2px;
+  display: inline !important;
+  letter-spacing: normal;
 }
 
-.cifra-section:first-child {
-  margin-top: 0;
-}
-
-.cifra-info {
-  color: #52525b;
-  font-weight: 600;
-  font-size: 0.95em;
-  display: inline-block;
-  margin-bottom: 4px;
-}
-
-.cifra-empty-line {
-  display: block;
-  height: 1.1em;
-}
-
-.cifra-lyric-line {
-  display: block;
-  color: #18181b;
-  font-size: 1em;
-  line-height: 1.8;
-  white-space: pre-wrap;
+.cifra-tablature {
+  font-family: ui-monospace, Consolas, monospace;
+  color: #4b5563;
+  display: inline !important;
+  white-space: pre;
 }
 
 /* MODO CANTOR (Foco apenas na letra) */
 .cifra-sheet.singer-mode {
   font-family:
-    "Inter",
     -apple-system,
     BlinkMacSystemFont,
-    sans-serif;
-  font-size: 28px;
-  line-height: 2.2;
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif !important;
+  font-size: 26px;
+  line-height: 2;
   color: #18181b;
   font-weight: 500;
-  white-space: pre-line;
-  padding: 40px 48px;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  padding: 36px 42px;
 }
 
 .cifra-sheet.singer-mode .cifra-chord {
@@ -1515,27 +1500,7 @@ body::before {
   font-weight: 700;
 }
 
-.cifra-section {
-  font-weight: 700;
-  color: #b45309;
-  margin: 16px 0 6px;
-  font-size: 1.05em;
-  border-left: 3px solid #eab308;
-  padding-left: 8px;
-  letter-spacing: 0.5px;
-}
 
-.cifra-tablature {
-  font-family: ui-monospace, monospace;
-  white-space: pre;
-  overflow-x: auto;
-  color: #4b5563;
-  background: rgba(0, 0, 0, 0.03);
-  padding: 8px 10px;
-  border-radius: 8px;
-  margin: 8px 0;
-  border: 1px solid var(--border-light);
-}
 
 .cifra-line {
   margin-bottom: 4px;
@@ -1554,3 +1519,4 @@ body::before {
   font-weight: 500;
   line-height: 1.6;
 }
+

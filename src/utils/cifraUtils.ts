@@ -1,3 +1,4 @@
+import http2 from "node:http2";
 /**
  * Utilitários para normalização, importação e transposição de cifras musicais.
  */
@@ -181,8 +182,13 @@ export function transporTextoCifra(textoCifra: string, semitons: number, targetK
 export function normalizarCifra(textoBruto: string): string {
   if (!textoBruto) return "";
 
-  // 1. Limpeza inicial de quebras de linha e ruídos
-  const lines = textoBruto.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  // 1. Limpeza de caracteres invisíveis e padronização de quebras de linha
+  const cleaned = textoBruto
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+
+  const lines = cleaned.split("\n");
   const filteredLines: string[] = [];
 
   for (let line of lines) {
@@ -218,7 +224,6 @@ export function normalizarCifra(textoBruto: string): string {
   const hasInlineChords = filteredLines.some((l) => /\[[A-G][#b]?[^\]]*\]/.test(l));
   const hasChordLines = filteredLines.some((l) => isChordLine(l));
 
-  // Se já tiver formato inline e não tiver linhas separadas de acordes em cima da letra
   if (hasInlineChords && !hasChordLines) {
     return filteredLines
       .join("\n")
@@ -226,7 +231,7 @@ export function normalizarCifra(textoBruto: string): string {
       .trim();
   }
 
-  // 3. Converter de linha de acordes + linha de letra para inline [Acorde]Letra
+  // 3. Converter linhas de acordes + letra em formato inline [Acorde]Letra
   const outputLines: string[] = [];
   let i = 0;
 
@@ -234,33 +239,27 @@ export function normalizarCifra(textoBruto: string): string {
     const currentLine = filteredLines[i];
     const trimmed = currentLine.trim();
 
-    // Linha vazia
     if (!trimmed) {
       outputLines.push("");
       i++;
       continue;
     }
 
-    // Tablatura: manter monoespaçada sem mexer
     if (isTablatureLine(currentLine)) {
       outputLines.push(currentLine);
       i++;
       continue;
     }
 
-    // Marcador de seção: formatar como [Seção]
     if (isSectionMarker(currentLine)) {
       const secName = trimmed.replace(/^\[|\:?\]?$/g, "").trim();
-      // Capitalizar primeira letra
       const formattedSec = secName.charAt(0).toUpperCase() + secName.slice(1);
       outputLines.push(`[${formattedSec}]`);
       i++;
       continue;
     }
 
-    // Se a linha for linha de acordes
     if (isChordLine(currentLine)) {
-      // Extrair todos os acordes e suas posições exatas na coluna
       const chordsWithPositions: { chord: string; index: number }[] = [];
       const regex = /\S+/g;
       let match: RegExpExecArray | null;
@@ -271,7 +270,6 @@ export function normalizarCifra(textoBruto: string): string {
         });
       }
 
-      // Verificar a próxima linha
       const nextLine = i + 1 < filteredLines.length ? filteredLines[i + 1] : "";
       const nextTrimmed = nextLine.trim();
 
@@ -280,30 +278,23 @@ export function normalizarCifra(textoBruto: string): string {
       const nextIsSection = isSectionMarker(nextLine);
       const nextIsEmpty = !nextTrimmed;
 
-      // Se a próxima linha NÃO for letra (for vazia, for outro acorde, tab ou seção),
-      // então esta linha é apenas de acordes (intro, solo, passagem)
       if (nextIsEmpty || nextIsChord || nextIsTab || nextIsSection) {
         const chordOnlyLine = chordsWithPositions.map((c) => `[${c.chord}]`).join(" ");
         outputLines.push(chordOnlyLine);
         i++;
       } else {
-        // A próxima linha É uma linha de letra! Mesclar acordes na letra na coluna correspondente
         let lyricChars = nextLine.split("");
-        // Inserir os acordes da direita para a esquerda para não alterar os índices à esquerda
         for (let j = chordsWithPositions.length - 1; j >= 0; j--) {
           const { chord, index } = chordsWithPositions[j];
-          // Se a letra for mais curta que a posição do acorde, preencher com espaços
           while (lyricChars.length < index) {
             lyricChars.push(" ");
           }
           lyricChars.splice(index, 0, `[${chord}]`);
         }
-
         outputLines.push(lyricChars.join(""));
-        i += 2; // consumiu a linha de acordes e a de letra
+        i += 2;
       }
     } else {
-      // Linha normal de texto/letra isolada
       outputLines.push(currentLine);
       i++;
     }
@@ -315,12 +306,6 @@ export function normalizarCifra(textoBruto: string): string {
     .trim();
 }
 
-import http2 from "node:http2";
-
-/**
- * Realiza requisição HTTP/2 direta com cabeçalhos de navegador modernos
- * para contornar bloqueios WAF/Akamai/Cloudflare do Cifra Club.
- */
 export async function fetchCifraClubHtml(targetUrl: string, redirectCount = 0): Promise<string> {
   if (redirectCount > 5) {
     throw new Error("Muitos redirecionamentos ao acessar o Cifra Club.");
@@ -538,14 +523,19 @@ export async function extrairCifraClub(urlStr: string): Promise<{
     html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i) ||
     html.match(/<div[^>]*class=["'][^"']*cifra_cnt[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
 
-  if (preMatch) {
+    if (preMatch) {
     let preContent = preMatch[1];
+    // Converter divs e brs do Cifra Club em quebras de linha reais
+    preContent = preContent
+      .replace(/<div[^>]*>/gi, "")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n");
     // Decodificar entidades e remover tags HTML preservando texto e quebras
     rawCifra = cleanHtmlEntities(preContent.replace(/<[^>]+>/g, ""));
     // Limpar zero-width spaces e artefatos de formatação do Cifra Club novo
     rawCifra = rawCifra.replace(/[\u200B-\u200D\uFEFF]/g, "");
     rawCifra = rawCifra.replace(/^[ \t]*Tom\s*=\s*[^\r\n]*[\r\n]*/gim, "");
-    rawCifra = rawCifra.replace(/^[ \t]*Intro\s*=\s*/gim, "Intro: ");
+    rawCifra = rawCifra.replace(/\n{3,}/g, "\n\n").trim();
   }
 
   if (!rawCifra.trim()) {

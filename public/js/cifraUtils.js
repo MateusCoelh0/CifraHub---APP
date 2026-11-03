@@ -141,30 +141,33 @@
   function normalizarCifra(textoBruto) {
     if (!textoBruto) return "";
 
-    const lines = textoBruto.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
-    const filteredLines = [];
+    var cleaned = textoBruto
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
 
-    for (let line of lines) {
-      const trimmed = line.trim();
+    var lines = cleaned.split("\n");
+    var filteredLines = [];
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var trimmed = line.trim();
 
       if (
-        trimmed.startsWith("Tom:") ||
-        trimmed.startsWith("Capotraste:") ||
-        trimmed.startsWith("Dificuldade:") ||
-        trimmed.startsWith("Afinação:") ||
-        trimmed.startsWith("Composição de:") ||
-        trimmed.includes("Essa informação está errada?") ||
-        trimmed.includes("Aprenda a tocar a cifra de") ||
-        trimmed.includes("Aplicativos do Cifra Club") ||
-        trimmed.includes("Mais acessadas")
+        trimmed.indexOf("Tom:") === 0 ||
+        trimmed.indexOf("Capotraste:") === 0 ||
+        trimmed.indexOf("Dificuldade:") === 0 ||
+        trimmed.indexOf("Afinação:") === 0 ||
+        trimmed.indexOf("Composição de:") === 0 ||
+        trimmed.indexOf("Essa informação está errada?") !== -1 ||
+        trimmed.indexOf("Aprenda a tocar a cifra de") !== -1 ||
+        trimmed.indexOf("Aplicativos do Cifra Club") !== -1 ||
+        trimmed.indexOf("Mais acessadas") !== -1
       ) {
         continue;
       }
 
-      // Separar marcadores de seção colados com acordes (ex: [Intro] Em7 A D G)
-      const sectionSplit = trimmed.match(
-        /^(\[\s*(?:Intro|Primeira Parte|Segunda Parte|Terceira Parte|Quarta Parte|Pré-Refrão|Pre-Refrao|Refrão|Refrao|Coro|Ponte|Solo|Interlúdio|Interludio|Passagem|Final|Outro|Verso|Estrofe)[^\]]*\]|\b(?:Intro|Primeira Parte|Segunda Parte|Refrão|Refrao|Solo|Ponte|Interlúdio|Interludio)\b:?)\s*(.+)$/i,
-      );
+      var sectionSplit = trimmed.match(/^(\[\s*(?:Intro|Primeira Parte|Segunda Parte|Terceira Parte|Quarta Parte|Pré-Refrão|Pre-Refrao|Refrão|Refrao|Coro|Ponte|Solo|Interlúdio|Interludio|Passagem|Final|Outro|Verso|Estrofe)[^\]]*\]|\b(?:Intro|Primeira Parte|Segunda Parte|Refrão|Refrao|Solo|Ponte|Interlúdio|Interludio)\b:?)\s*(.+)$/i);
       if (sectionSplit) {
         filteredLines.push(sectionSplit[1].trim());
         filteredLines.push(sectionSplit[2].trim());
@@ -174,89 +177,79 @@
       filteredLines.push(line);
     }
 
-    const hasInlineChords = filteredLines.some((l) => /\[[A-G][#b]?[^\]]*\]/.test(l));
-    const hasChordLines = filteredLines.some((l) => isChordLine(l));
+    var hasInlineChords = filteredLines.some(function(l) { return /\[[A-G][#b]?[^\]]*\]/.test(l); });
+    var hasChordLines = filteredLines.some(function(l) { return isChordLine(l); });
 
     if (hasInlineChords && !hasChordLines) {
-      return filteredLines
-        .join("\n")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
+      return filteredLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
     }
 
-    const outputLines = [];
-    let i = 0;
+    var outputLines = [];
+    var idx = 0;
 
-    while (i < filteredLines.length) {
-      const currentLine = filteredLines[i];
-      const trimmed = currentLine.trim();
+    while (idx < filteredLines.length) {
+      var currentLine = filteredLines[idx];
+      var currentTrimmed = currentLine.trim();
 
-      if (!trimmed) {
+      if (!currentTrimmed) {
         outputLines.push("");
-        i++;
+        idx++;
         continue;
       }
 
       if (isTablatureLine(currentLine)) {
         outputLines.push(currentLine);
-        i++;
+        idx++;
         continue;
       }
 
       if (isSectionMarker(currentLine)) {
-        const secName = trimmed.replace(/^\[|\:?\]?$/g, "").trim();
-        const formattedSec = secName.charAt(0).toUpperCase() + secName.slice(1);
-        outputLines.push(`[${formattedSec}]`);
-        i++;
+        var secName = currentTrimmed.replace(/^\[|\:?\]?$/g, "").trim();
+        var formattedSec = secName.charAt(0).toUpperCase() + secName.slice(1);
+        outputLines.push("[" + formattedSec + "]");
+        idx++;
         continue;
       }
 
       if (isChordLine(currentLine)) {
-        const chordsWithPositions = [];
-        const regex = /\S+/g;
-        let match;
+        var chordsWithPositions = [];
+        var regex = /\S+/g;
+        var match;
         while ((match = regex.exec(currentLine)) !== null) {
-          chordsWithPositions.push({
-            chord: match[0],
-            index: match.index,
-          });
+          chordsWithPositions.push({ chord: match[0], index: match.index });
         }
 
-        const nextLine = i + 1 < filteredLines.length ? filteredLines[i + 1] : "";
-        const nextTrimmed = nextLine.trim();
+        var nextLine = idx + 1 < filteredLines.length ? filteredLines[idx + 1] : "";
+        var nextTrimmed = nextLine.trim();
 
-        const nextIsChord = isChordLine(nextLine);
-        const nextIsTab = isTablatureLine(nextLine);
-        const nextIsSection = isSectionMarker(nextLine);
-        const nextIsEmpty = !nextTrimmed;
+        var nextIsChord = isChordLine(nextLine);
+        var nextIsTab = isTablatureLine(nextLine);
+        var nextIsSection = isSectionMarker(nextLine);
+        var nextIsEmpty = !nextTrimmed;
 
         if (nextIsEmpty || nextIsChord || nextIsTab || nextIsSection) {
-          const chordOnlyLine = chordsWithPositions.map((c) => `[${c.chord}]`).join(" ");
+          var chordOnlyLine = chordsWithPositions.map(function(c) { return "[" + c.chord + "]"; }).join(" ");
           outputLines.push(chordOnlyLine);
-          i++;
+          idx++;
         } else {
-          let lyricChars = nextLine.split("");
-          for (let j = chordsWithPositions.length - 1; j >= 0; j--) {
-            const { chord, index } = chordsWithPositions[j];
-            while (lyricChars.length < index) {
+          var lyricChars = nextLine.split("");
+          for (var j = chordsWithPositions.length - 1; j >= 0; j--) {
+            var item = chordsWithPositions[j];
+            while (lyricChars.length < item.index) {
               lyricChars.push(" ");
             }
-            lyricChars.splice(index, 0, `[${chord}]`);
+            lyricChars.splice(item.index, 0, "[" + item.chord + "]");
           }
-
           outputLines.push(lyricChars.join(""));
-          i += 2;
+          idx += 2;
         }
       } else {
         outputLines.push(currentLine);
-        i++;
+        idx++;
       }
     }
 
-    return outputLines
-      .join("\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+    return outputLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
   }
 
   window.normalizarCifra = normalizarCifra;

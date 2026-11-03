@@ -715,23 +715,62 @@ function isChordLine(line) {
   return valid > 0 && valid >= Math.ceil(tokens.length * 0.65);
 }
 
-function wrapChordsInLine(line, semitones) {
-  const regex =
-    /(?:^|(?<=[^A-Za-z0-9#]))([A-G][#b]?(?:m|maj|min|sus|dim|aug|add)?[0-9]*(?:\/[A-G][#b]?)?)(?![A-Za-z0-9#])/g;
-  let result = "";
-  let lastIndex = 0;
+function inlineToTwoLines(line) {
+  let chordLine = "";
+  let lyricLine = "";
+  const cleanLine = line.replace(/\[\s*\]/g, "");
+  const regex = /\[([^\]]+)\]|([^\[]+)/g;
   let match;
 
-  while ((match = regex.exec(line)) !== null) {
-    const chord = match[1];
-    const trans = semitones !== 0 ? transposeChord(chord, semitones) : chord;
-    const matchStart = match.index;
-    result += escapeHtml(line.substring(lastIndex, matchStart));
-    result += `<b class="cifra-chord">${escapeHtml(trans)}</b>`;
-    lastIndex = matchStart + chord.length;
-    regex.lastIndex = lastIndex;
+  while ((match = regex.exec(cleanLine)) !== null) {
+    if (match[1]) {
+      const chord = match[1].trim();
+      if (!chord) continue;
+      const targetCol = lyricLine.length;
+      if (chordLine.length < targetCol) {
+        chordLine += " ".repeat(targetCol - chordLine.length);
+      } else if (chordLine.length > targetCol) {
+        chordLine += " ";
+        while (lyricLine.length < chordLine.length - chord.length) {
+          lyricLine += " ";
+        }
+      }
+      chordLine += chord;
+    } else if (match[2]) {
+      lyricLine += match[2];
+    }
   }
-  result += escapeHtml(line.substring(lastIndex));
+  return { chordLine, lyricLine };
+}
+
+function formatChordLine(line, semitones) {
+  const regex = /\S+/g;
+  let match;
+  let lastIdx = 0;
+  let result = "";
+
+  while ((match = regex.exec(line)) !== null) {
+    const rawToken = match[0];
+    const col = match.index;
+
+    if (col > lastIdx) {
+      result += " ".repeat(col - lastIdx);
+    }
+
+    if (isChordToken(rawToken)) {
+      const trans = semitones !== 0 ? transposeChord(rawToken, semitones) : rawToken;
+      result += '<b class="cifra-chord">' + escapeHtml(trans) + '</b>';
+    } else {
+      result += escapeHtml(rawToken);
+    }
+
+    lastIdx = col + rawToken.length;
+  }
+
+  if (lastIdx < line.length) {
+    result += " ".repeat(line.length - lastIdx);
+  }
+
   return result;
 }
 
@@ -750,101 +789,122 @@ function renderCifra() {
   }
 
   let cifraText = appState.currentSong.cifra || "";
-  if (window.normalizarCifra) {
-    cifraText = window.normalizarCifra(cifraText);
-  }
-
   const totalShift = (appState.transpose || 0) - (appState.capotraste || 0);
   const isSinger = !!appState.singerMode;
 
-  const rawLines = cifraText.replace(/\r\n/g, "\n").split("\n");
-  const htmlOutput = [];
+  // 1. Limpeza de caracteres invisíveis e padronização de quebras de linha
+  const cleanText = cifraText
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
 
-  for (let i = 0; i < rawLines.length; i++) {
-    const line = rawLines[i];
+  const lines = cleanText.split("\n");
+  const processedLines = [];
+
+  // Primeiro passo: normalizar e desdobrar linhas
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
 
-    // 1. Linha em branco
-    if (!trimmed) {
-      htmlOutput.push('<div class="cifra-line empty-line">&nbsp;</div>');
-      continue;
-    }
-
-    // 2. Tablatura
-    if (/^\s*[eEaAdDgGbB1-6]\|/.test(line)) {
-      htmlOutput.push(`<div class="cifra-tablature">${escapeHtml(line)}</div>`);
-      continue;
-    }
-
-    // 3. Marcador de seção (ex: [Intro], [Refrão], [Primeira Parte])
-    const sectionMatch = trimmed.match(/^\[([A-Za-zÀ-ÿ0-9\s\-_]+)\]$/);
+    // Marcador de seção com acordes opcionais na mesma linha: ex: [Intro] C ou [Intro]
+    const sectionMatch = trimmed.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.*)$/);
     if (sectionMatch) {
-      htmlOutput.push(`<div class="cifra-section">${escapeHtml(sectionMatch[1])}</div>`);
-      continue;
-    }
-
-    // 4. Modo Cantor: só letra sem acordes
-    if (isSinger) {
-      const cleanLyric = line.replace(/\[[^\]]+\]/g, "").trim();
-      if (cleanLyric) {
-        htmlOutput.push(`<div class="cifra-line singer-line">${escapeHtml(cleanLyric)}</div>`);
+      const secMarker = sectionMatch[1];
+      const rest = sectionMatch[2].trim();
+      if (!rest) {
+        processedLines.push({ type: "section", content: secMarker });
+      } else {
+        processedLines.push({ type: "section-with-chords", section: secMarker, chords: rest });
       }
       continue;
     }
 
-    // 5. Linha contendo acordes inline [Acorde]Letra
-    if (/\[([^\]]+)\]/.test(line)) {
-      // Linha composta unicamente por acordes (ex: [G] [D] [Am] [C])
-      const withoutBrackets = line.replace(/\[[^\]]+\]/g, "");
+    // Tablatura
+    if (/^\s*[eEaAdDgGbB1-6]\|/.test(line)) {
+      processedLines.push({ type: "tab", content: line });
+      continue;
+    }
+
+    // Linha vazia
+    if (!trimmed) {
+      processedLines.push({ type: "empty", content: "" });
+      continue;
+    }
+
+    // Linha com colchetes inline [C]Letra
+    if (/\[[A-G][#b]?[^\]]*\]/.test(line)) {
+      const cleanLine = line.replace(/\[\s*\]/g, "");
+      const withoutBrackets = cleanLine.replace(/\[[^\]]+\]/g, "");
       if (!withoutBrackets.trim()) {
-        const chordLineRaw = line.replace(/\[([^\]]+)\]/g, (m, c) => {
-          return totalShift !== 0 ? transposeChord(c, totalShift) : c;
-        });
-        const wrappedChordLine = wrapChordsInLine(chordLineRaw, 0);
-        htmlOutput.push(`<div class="cifra-line cifra-chord-row">${wrappedChordLine}</div>`);
+        const chordOnly = cleanLine.replace(/\[([^\]]+)\]/g, "$1 ").replace(/\s+/g, " ").trim();
+        processedLines.push({ type: "chord", content: chordOnly });
         continue;
       }
 
-      // Separar em blocos [Acorde] e texto
-      let chordLine = "";
-      let lyricLine = "";
-      const regex = /\[([^\]]+)\]|([^\[]+)/g;
-      let match;
-
-      while ((match = regex.exec(line)) !== null) {
-        if (match[1]) {
-          const rawChord = match[1];
-          const chord = totalShift !== 0 ? transposeChord(rawChord, totalShift) : rawChord;
-          const targetCol = lyricLine.length;
-
-          if (chordLine.length < targetCol) {
-            chordLine += " ".repeat(targetCol - chordLine.length);
-          } else if (chordLine.length > targetCol) {
-            chordLine += " ";
-            while (lyricLine.length < chordLine.length - chord.length) {
-              lyricLine += " ";
-            }
-          }
-          chordLine += chord;
-        } else if (match[2]) {
-          lyricLine += match[2];
-        }
+      const { chordLine, lyricLine } = inlineToTwoLines(cleanLine);
+      if (chordLine.trim()) {
+        processedLines.push({ type: "chord", content: chordLine });
       }
-
-      // Renderizar par com acordes perfeitamente alinhados no topo e letra embaixo
-      const wrappedChordLine = wrapChordsInLine(chordLine, 0);
-      htmlOutput.push(
-        `<div class="cifra-pair"><div class="cifra-chord-row">${wrappedChordLine}</div><div class="cifra-lyric-row">${escapeHtml(lyricLine || " ")}</div></div>`
-      );
+      if (lyricLine.trim()) {
+        processedLines.push({ type: "lyric", content: lyricLine });
+      }
       continue;
     }
 
-    // 6. Linha normal de texto puro
-    htmlOutput.push(`<div class="cifra-line">${escapeHtml(line)}</div>`);
+    // Linha tradicional: acorde sobre letra (estilo Cifra Club) ou letra pura
+    if (isChordLine(line)) {
+      processedLines.push({ type: "chord", content: line });
+    } else {
+      processedLines.push({ type: "lyric", content: line });
+    }
+  }
+
+  // Segundo passo: construir HTML linha por linha preservando alinhamento estrito
+  const output = [];
+
+  for (const item of processedLines) {
+    if (item.type === "empty") {
+      output.push("");
+      continue;
+    }
+
+    if (item.type === "section") {
+      output.push('<span class="cifra-section">' + escapeHtml(item.content) + '</span>');
+      continue;
+    }
+
+    if (item.type === "section-with-chords") {
+      let secHtml = '<span class="cifra-section">' + escapeHtml(item.section) + '</span>';
+      if (!isSinger && item.chords) {
+        secHtml += " " + formatChordLine(item.chords, totalShift);
+      }
+      output.push(secHtml);
+      continue;
+    }
+
+    if (item.type === "tab") {
+      if (!isSinger) {
+        output.push('<span class="cifra-tablature">' + escapeHtml(item.content) + '</span>');
+      }
+      continue;
+    }
+
+    if (item.type === "chord") {
+      if (!isSinger) {
+        output.push(formatChordLine(item.content, totalShift));
+      }
+      continue;
+    }
+
+    if (item.type === "lyric") {
+      output.push(escapeHtml(item.content));
+      continue;
+    }
   }
 
   container.className = "cifra-sheet" + (isSinger ? " singer-mode" : "");
-  container.innerHTML = htmlOutput.join("");
+  const fullHtml = output.join("\n");
+  container.innerHTML = isSinger ? fullHtml.replace(/\n{3,}/g, "\n\n") : fullHtml;
 }
 
 // ═══════════════════════════ RENDERIZAR INTERFACE ═══════════════════════════
