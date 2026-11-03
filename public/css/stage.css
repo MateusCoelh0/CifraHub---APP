@@ -565,14 +565,15 @@ body::before {
   background: rgba(255, 255, 255, 0.4);
 }
 
+.cifra-display,
 .cifra-sheet {
-  font-family: ui-monospace, Consolas, "Liberation Mono", Menlo, Monaco, monospace !important;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', ui-monospace, monospace !important;
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.45;
   color: #18181b;
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
-  overflow-wrap: break-word;
+  white-space: pre !important;
+  word-break: normal !important;
+  overflow-x: auto;
   font-variant-ligatures: none;
   tab-size: 4;
   background: #ffffff;
@@ -586,23 +587,36 @@ body::before {
   user-select: text;
 }
 
+.cifra-display .chord,
+.cifra-sheet .chord,
+.cifra-display .cifra-chord,
+.cifra-sheet .cifra-chord,
+.chord,
 .cifra-chord {
-  color: #d97706;
-  font-weight: 700;
+  color: #d97706 !important;
+  font-weight: 700 !important;
   display: inline !important;
-  letter-spacing: normal;
+  padding: 0 !important;
+  margin: 0 !important;
+  letter-spacing: normal !important;
   transition: color 0.15s;
 }
 
+.cifra-display .chord:hover,
+.cifra-sheet .chord:hover,
 .cifra-chord:hover {
-  color: #b45309;
+  color: #b45309 !important;
 }
 
+.cifra-display .section-marker,
+.cifra-sheet .section-marker,
+.section-marker,
 .cifra-section {
-  color: #b45309;
-  font-weight: 700;
+  color: #6b7280 !important;
+  font-weight: 700 !important;
   font-size: 0.95em;
-  display: inline !important;
+  display: inline-block;
+  margin-top: 0.75rem;
   letter-spacing: normal;
 }
 
@@ -614,6 +628,7 @@ body::before {
 }
 
 /* MODO CANTOR (Foco apenas na letra) */
+.cifra-display.singer-mode,
 .cifra-sheet.singer-mode {
   font-family:
     -apple-system,
@@ -624,7 +639,7 @@ body::before {
     Arial,
     sans-serif !important;
   font-size: 26px;
-  line-height: 2;
+  line-height: 1.8;
   color: #18181b;
   font-weight: 500;
   white-space: pre-wrap !important;
@@ -632,7 +647,12 @@ body::before {
   padding: 36px 42px;
 }
 
-.cifra-sheet.singer-mode .cifra-chord {
+.cifra-display.singer-mode .chord,
+.cifra-sheet.singer-mode .chord,
+.cifra-display.singer-mode .cifra-chord,
+.cifra-sheet.singer-mode .cifra-chord,
+.cifra-display.singer-mode .cifra-tablature,
+.cifra-sheet.singer-mode .cifra-tablature {
   display: none !important;
 }
 

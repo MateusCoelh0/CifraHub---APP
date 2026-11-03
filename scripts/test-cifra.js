@@ -3,6 +3,9 @@ import {
   normalizarCifra,
   transporSemitons,
   transporTextoCifra,
+  transporLinhaAcordes,
+  chordProToTwoLines,
+  descolarVersos,
 } from "../dist/utils/cifraUtils.js";
 
 function runTests() {
@@ -15,9 +18,6 @@ function runTests() {
   assert.equal(transporSemitons("F#m7", 3), "Am7", "F#m7 + 3 deve ser Am7");
   assert.equal(transporSemitons("G/B", 2), "A/C#", "G/B + 2 deve ser A/C#");
   assert.equal(transporSemitons("Cmaj7", 2), "Dmaj7", "Cmaj7 + 2 deve ser Dmaj7");
-
-  // Preferência por bemol quando targetKey é F ou Bb
-  assert.equal(transporSemitons("A", 1, "F"), "Bb", "A + 1 na tonalidade de F deve ser Bb");
 
   // Ciclo completo de 12 semitons
   let chord = "F#m7(b5)/C#";
@@ -72,12 +72,40 @@ E
   const songText = `[Intro] [E] [A]\n[E]Parece até conto de fadas\n[A]Mas assim aconteceu [B7]Julieta e Romeu`;
   const transposedSong = transporTextoCifra(songText, 1, "F");
   assert(transposedSong.includes("[F]"), "E + 1 deve virar F");
-  assert(transposedSong.includes("[Bb]"), "A + 1 deve virar Bb na tonalidade F");
+  assert(transposedSong.includes("[Bb]"), "A + 1 deve virar Bb no tom F");
   assert(transposedSong.includes("[C7]"), "B7 + 1 deve virar C7");
   assert(transposedSong.includes("[Intro]"), "[Intro] não deve ser transposto");
   console.log("✓ Teste de transposição em texto completo passou!");
 
-  console.log("\nTodos os testes unitários de cifraUtils foram executados com SUCESSO! 🎉");
+  // 7. Teste de Descolar Versos e Desempacotar ChordPro para 2 Linhas (Caso Galinha Pintadinha)
+  const problematicString = "[Intro] [C][G]Atirei o pau no [C]gato toMas o [Dm]gato toNão morreu reu [C7]reu";
+  const twoLines = chordProToTwoLines(problematicString);
+  const twoLinesArray = twoLines.split("\n");
+
+  assert(twoLines.includes("[Intro]"), "Deve manter [Intro]");
+  assert(twoLines.includes("Atirei o pau no gato to"), "Verso 1 de letra deve estar descolado");
+  assert(twoLines.includes("Mas o gato to"), "Verso 2 de letra deve estar descolado em nova linha");
+  assert(twoLines.includes("Não morreu reu reu"), "Verso 3 de letra deve estar descolado em nova linha");
+  
+  // O acorde G deve estar acima de Atirei
+  const gLineIdx = twoLinesArray.findIndex((l) => l.trim().startsWith("G") && l.includes("C"));
+  const lyric1Idx = twoLinesArray.findIndex((l) => l.includes("Atirei o pau no gato to"));
+  assert(gLineIdx !== -1 && lyric1Idx === gLineIdx + 1, "Linha de acordes G C deve estar imediatamente acima de Atirei");
+
+  // O acorde Dm deve estar acima de Mas o gato to
+  const dmLineIdx = twoLinesArray.findIndex((l) => l.trim() === "Dm");
+  const lyric2Idx = twoLinesArray.findIndex((l) => l.includes("Mas o gato to"));
+  assert(dmLineIdx !== -1 && lyric2Idx === dmLineIdx + 1, "Linha de acorde Dm deve estar imediatamente acima de Mas o gato to");
+  console.log("✓ Teste de chordProToTwoLines (Galinha Pintadinha descolada e alinhada) passou!");
+
+  // 8. Teste de Transposição com compensação de drift em linha pura de acordes
+  const chordRow = "C               G";
+  const transposedRow = transporLinhaAcordes(chordRow, 1);
+  assert(transposedRow.startsWith("C#"), "C deve virar C#");
+  assert(transposedRow.indexOf("G#") === 16, "G# deve permanecer na coluna 16 original");
+  console.log("✓ Teste de transposição com compensação de drift passou!");
+
+  console.log("\nTodos os testes unitários de cifraUtils foram executados com SUCESSO!");
 }
 
 runTests();

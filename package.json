@@ -14,6 +14,7 @@
     "test:security": "tsx scripts/security-check.ts",
     "db:set-owner-password": "tsx scripts/seed-owner.ts",
     "db:migrate-session-codes": "node scripts/migrate-session-codes.js",
+    "test": "node scripts/test-cifra.js",
     "test:api": "node scripts/test-api.js",
     "test:cifra": "node scripts/test-cifra.js",
     "db:deduplicate": "node scripts/run-deduplicate.js",

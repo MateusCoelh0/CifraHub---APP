@@ -128,14 +128,202 @@
     return `${newRoot}${suffix}${newBass}`;
   }
 
+  function transporLinhaAcordes(linha, semitons, targetKey) {
+    if (semitons === 0 || !linha) return linha;
+    var regex = /\S+/g;
+    var match;
+    var result = "";
+    var lastIdx = 0;
+    var drift = 0;
+
+    while ((match = regex.exec(linha)) !== null) {
+      var rawToken = match[0];
+      var col = match.index;
+      var spacesBefore = col - lastIdx;
+
+      if (drift > 0) {
+        var consume = Math.min(drift, Math.max(0, spacesBefore - 1));
+        spacesBefore -= consume;
+        drift -= consume;
+      } else if (drift < 0) {
+        var add = -drift;
+        spacesBefore += add;
+        drift += add;
+      }
+
+      result += " ".repeat(Math.max(0, spacesBefore));
+
+      if (isChordToken(rawToken)) {
+        var trans = transporSemitons(rawToken, semitons, targetKey);
+        result += trans;
+        drift += trans.length - rawToken.length;
+      } else {
+        result += rawToken;
+      }
+
+      lastIdx = col + rawToken.length;
+    }
+
+    if (lastIdx < linha.length) {
+      var trailingSpaces = linha.length - lastIdx;
+      if (drift > 0) {
+        trailingSpaces = Math.max(0, trailingSpaces - drift);
+      } else if (drift < 0) {
+        trailingSpaces += -drift;
+      }
+      result += " ".repeat(Math.max(0, trailingSpaces));
+    }
+
+    return result;
+  }
+
   function transporTextoCifra(textoCifra, semitons, targetKey) {
     if (!textoCifra || semitons === 0) return textoCifra;
 
-    return textoCifra.replace(/\[([^\]]+)\]/g, (match, chord) => {
-      if (isSectionMarker(chord)) return match;
-      const transposed = transporSemitons(chord, semitons, targetKey);
-      return `[${transposed}]`;
-    });
+    var lines = textoCifra.split("\n");
+    var processed = [];
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (isTablatureLine(line)) {
+        processed.push(line);
+        continue;
+      }
+
+      if (/\[[A-G][#b]?[^\]]*\]/.test(line)) {
+        var transposedLine = line.replace(/\[([^\]]+)\]/g, function (match, chord) {
+          if (isSectionMarker(chord) || !isChordToken(chord.trim())) return match;
+          var transposed = transporSemitons(chord.trim(), semitons, targetKey);
+          return "[" + transposed + "]";
+        });
+        processed.push(transposedLine);
+        continue;
+      }
+
+      var sectionMatch = line.trim().match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.+)$/);
+      if (sectionMatch && !isChordToken(sectionMatch[1].replace(/[\[\]]/g, ""))) {
+        var sec = sectionMatch[1];
+        var chords = sectionMatch[2];
+        var transposedChords = transporLinhaAcordes(chords, semitons, targetKey);
+        processed.push(sec + " " + transposedChords);
+        continue;
+      }
+
+      if (isChordLine(line)) {
+        processed.push(transporLinhaAcordes(line, semitons, targetKey));
+        continue;
+      }
+
+      processed.push(line);
+    }
+
+    return processed.join("\n");
+  }
+
+  var transpor = transporTextoCifra;
+
+  function descolarVersos(texto) {
+    if (!texto) return "";
+    var res = texto;
+    res = res.replace(/(\[[^\]]+\])\s*(\[[A-G][#b]?[^\]]*\][A-Za-zÀ-ÿ])/g, "$1\n$2");
+    res = res.replace(/([a-záéíóúâêôãõç!?.,;:])(\[[A-G][#b]?[^\]]*\][A-ZÁÉÍÓÚÂÊÔÃÕÇ])/g, "$1\n$2");
+    res = res.replace(/([a-záéíóúâêôãõç!?.,;:])([A-ZÁÉÍÓÚÂÊÔÃÕÇ])/g, "$1\n$2");
+    return res;
+  }
+
+  function chordProToTwoLines(texto) {
+    if (!texto) return "";
+
+    var res = descolarVersos(
+      texto
+        .replace(/[\u200B-\u200D\uFEFF]/g, "")
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+    );
+
+    var lines = res.split("\n");
+    var outputLines = [];
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var trimmed = line.trim();
+
+      if (!trimmed) {
+        outputLines.push("");
+        continue;
+      }
+
+      if (/^\[([A-Za-zÀ-ÿ0-9\s\-_:]+)\]$/.test(trimmed)) {
+        outputLines.push(trimmed);
+        continue;
+      }
+
+      var sectionWithChords = trimmed.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.*)$/);
+      if (sectionWithChords && !isChordToken(sectionWithChords[1].replace(/[\[\]]/g, ""))) {
+        var secMarker = sectionWithChords[1];
+        var rest = sectionWithChords[2].trim();
+        if (!rest) {
+          outputLines.push(secMarker);
+        } else {
+          var cleanChords = rest.replace(/\[([A-G][#b]?[^\]]*)\]/g, "$1").replace(/\s+/g, "  ");
+          outputLines.push(secMarker + " " + cleanChords);
+        }
+        continue;
+      }
+
+      if (isTablatureLine(line)) {
+        outputLines.push(line);
+        continue;
+      }
+
+      if (/\[[A-G][#b]?[^\]]*\]/.test(line)) {
+        var cleanLine = line.replace(/\[\s*\]/g, "");
+        var withoutBrackets = cleanLine.replace(/\[[^\]]+\]/g, "");
+
+        if (!withoutBrackets.trim()) {
+          var chordOnly = cleanLine.replace(/\[([^\]]+)\]/g, "$1  ").replace(/\s+/g, "  ").trim();
+          outputLines.push(chordOnly);
+          continue;
+        }
+
+        var chordLine = "";
+        var lyricLine = "";
+        var regex = /\[([^\]]+)\]|([^\[]+)/g;
+        var match;
+
+        while ((match = regex.exec(cleanLine)) !== null) {
+          if (match[1]) {
+            var chord = match[1].trim();
+            if (!chord) continue;
+            var targetCol = lyricLine.length;
+
+            if (chordLine.length < targetCol) {
+              chordLine += " ".repeat(targetCol - chordLine.length);
+            } else if (chordLine.length > targetCol) {
+              chordLine += " ";
+              while (lyricLine.length < chordLine.length - chord.length) {
+                lyricLine += " ";
+              }
+            }
+            chordLine += chord;
+          } else if (match[2]) {
+            lyricLine += match[2];
+          }
+        }
+
+        if (chordLine.trim()) {
+          outputLines.push(chordLine);
+        }
+        if (lyricLine.trim()) {
+          outputLines.push(lyricLine);
+        }
+        continue;
+      }
+
+      outputLines.push(line);
+    }
+
+    return outputLines.join("\n");
   }
 
   function normalizarCifra(textoBruto) {
@@ -255,6 +443,11 @@
   window.normalizarCifra = normalizarCifra;
   window.transporSemitons = transporSemitons;
   window.transporTextoCifra = transporTextoCifra;
+  window.transporLinhaAcordes = transporLinhaAcordes;
+  window.transpor = transpor;
+  window.descolarVersos = descolarVersos;
+  window.chordProToTwoLines = chordProToTwoLines;
+  window.isChordToken = isChordToken;
   window.isChordLine = isChordLine;
   window.isTablatureLine = isTablatureLine;
   window.isSectionMarker = isSectionMarker;

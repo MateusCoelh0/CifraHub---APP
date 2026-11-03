@@ -158,17 +158,218 @@ export function transporSemitons(acorde: string, semitons: number, targetKey?: s
 }
 
 /**
- * Transpõe todos os acordes inline [Acorde] dentro de um texto de cifra.
+ * Transpõe uma linha pura de acordes preservando a coluna dos acordes seguintes
+ * ao compensar a diferença de largura (crescimento ou encolhimento).
+ */
+export function transporLinhaAcordes(linha: string, semitons: number, targetKey?: string): string {
+  if (semitons === 0 || !linha) return linha;
+  const regex = /\S+/g;
+  let match: RegExpExecArray | null;
+  let result = "";
+  let lastIdx = 0;
+  let drift = 0;
+
+  while ((match = regex.exec(linha)) !== null) {
+    const rawToken = match[0];
+    const col = match.index;
+    let spacesBefore = col - lastIdx;
+
+    if (drift > 0) {
+      const consume = Math.min(drift, Math.max(0, spacesBefore - 1));
+      spacesBefore -= consume;
+      drift -= consume;
+    } else if (drift < 0) {
+      const add = -drift;
+      spacesBefore += add;
+      drift += add;
+    }
+
+    result += " ".repeat(Math.max(0, spacesBefore));
+
+    if (isChordToken(rawToken)) {
+      const trans = transporSemitons(rawToken, semitons, targetKey);
+      result += trans;
+      drift += trans.length - rawToken.length;
+    } else {
+      result += rawToken;
+    }
+
+    lastIdx = col + rawToken.length;
+  }
+
+  if (lastIdx < linha.length) {
+    let trailingSpaces = linha.length - lastIdx;
+    if (drift > 0) {
+      trailingSpaces = Math.max(0, trailingSpaces - drift);
+    } else if (drift < 0) {
+      trailingSpaces += -drift;
+    }
+    result += " ".repeat(Math.max(0, trailingSpaces));
+  }
+
+  return result;
+}
+
+/**
+ * Transpõe um texto de cifra completo, suportando tanto formato com colchetes [Am7]
+ * quanto linhas tradicionais de acordes sobre letra (Cifra Club).
  */
 export function transporTextoCifra(textoCifra: string, semitons: number, targetKey?: string): string {
   if (!textoCifra || semitons === 0) return textoCifra;
 
-  return textoCifra.replace(/\[([^\]]+)\]/g, (match, chord) => {
-    // Se for marcador de seção, preservar
-    if (isSectionMarker(chord)) return match;
-    const transposed = transporSemitons(chord, semitons, targetKey);
-    return `[${transposed}]`;
-  });
+  const lines = textoCifra.split("\n");
+  const processed: string[] = [];
+
+  for (const line of lines) {
+    if (isTablatureLine(line)) {
+      processed.push(line);
+      continue;
+    }
+
+    if (/\[[A-G][#b]?[^\]]*\]/.test(line)) {
+      const transposedLine = line.replace(/\[([^\]]+)\]/g, (match, chord) => {
+        if (isSectionMarker(chord) || !isChordToken(chord.trim())) return match;
+        const transposed = transporSemitons(chord.trim(), semitons, targetKey);
+        return `[${transposed}]`;
+      });
+      processed.push(transposedLine);
+      continue;
+    }
+
+    const sectionMatch = line.trim().match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.+)$/);
+    if (sectionMatch && !isChordToken(sectionMatch[1].replace(/[\[\]]/g, ""))) {
+      const sec = sectionMatch[1];
+      const chords = sectionMatch[2];
+      const transposedChords = transporLinhaAcordes(chords, semitons, targetKey);
+      processed.push(`${sec} ${transposedChords}`);
+      continue;
+    }
+
+    if (isChordLine(line)) {
+      processed.push(transporLinhaAcordes(line, semitons, targetKey));
+      continue;
+    }
+
+    processed.push(line);
+  }
+
+  return processed.join("\n");
+}
+
+export const transpor = transporTextoCifra;
+
+/**
+ * Descola versos que porventura tenham colado sem quebra de linha.
+ */
+export function descolarVersos(texto: string): string {
+  if (!texto) return "";
+  let res = texto;
+  // 1. [Intro] ou seção seguido de acorde e letra: [Intro] [C][G]Atirei -> [Intro] [C]\n[G]Atirei
+  res = res.replace(/(\[[^\]]+\])\s*(\[[A-G][#b]?[^\]]*\][A-Za-zÀ-ÿ])/g, "$1\n$2");
+  // 2. Letra minúscula ou pontuação colada em [Acorde]LetraMaiúscula: gato to[Dm]Mas -> gato to\n[Dm]Mas
+  res = res.replace(/([a-záéíóúâêôãõç!?.,;:])(\[[A-G][#b]?[^\]]*\][A-ZÁÉÍÓÚÂÊÔÃÕÇ])/g, "$1\n$2");
+  // 3. Letra minúscula ou pontuação colada diretamente em Letra Maiúscula: gato toMas -> gato to\nMas
+  res = res.replace(/([a-záéíóúâêôãõç!?.,;:])([A-ZÁÉÍÓÚÂÊÔÃÕÇ])/g, "$1\n$2");
+  return res;
+}
+
+/**
+ * Converte cifras ChordPro inline ([C]Letra) em 2 linhas (acordes sobre letra)
+ * no estilo Cifra Club, preservando espaços, seções e tablaturas.
+ */
+export function chordProToTwoLines(texto: string): string {
+  if (!texto) return "";
+
+  let res = descolarVersos(
+    texto
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+  );
+
+  const lines = res.split("\n");
+  const outputLines: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      outputLines.push("");
+      continue;
+    }
+
+    if (/^\[([A-Za-zÀ-ÿ0-9\s\-_:]+)\]$/.test(trimmed)) {
+      outputLines.push(trimmed);
+      continue;
+    }
+
+    const sectionWithChords = trimmed.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.*)$/);
+    if (sectionWithChords && !isChordToken(sectionWithChords[1].replace(/[\[\]]/g, ""))) {
+      const secMarker = sectionWithChords[1];
+      const rest = sectionWithChords[2].trim();
+      if (!rest) {
+        outputLines.push(secMarker);
+      } else {
+        const cleanChords = rest.replace(/\[([A-G][#b]?[^\]]*)\]/g, "$1").replace(/\s+/g, "  ");
+        outputLines.push(secMarker + " " + cleanChords);
+      }
+      continue;
+    }
+
+    if (isTablatureLine(line)) {
+      outputLines.push(line);
+      continue;
+    }
+
+    if (/\[[A-G][#b]?[^\]]*\]/.test(line)) {
+      const cleanLine = line.replace(/\[\s*\]/g, "");
+      const withoutBrackets = cleanLine.replace(/\[[^\]]+\]/g, "");
+
+      if (!withoutBrackets.trim()) {
+        const chordOnly = cleanLine.replace(/\[([^\]]+)\]/g, "$1  ").replace(/\s+/g, "  ").trim();
+        outputLines.push(chordOnly);
+        continue;
+      }
+
+      let chordLine = "";
+      let lyricLine = "";
+      const regex = /\[([^\]]+)\]|([^\[]+)/g;
+      let match: RegExpExecArray | null;
+
+      while ((match = regex.exec(cleanLine)) !== null) {
+        if (match[1]) {
+          const chord = match[1].trim();
+          if (!chord) continue;
+          const targetCol = lyricLine.length;
+
+          if (chordLine.length < targetCol) {
+            chordLine += " ".repeat(targetCol - chordLine.length);
+          } else if (chordLine.length > targetCol) {
+            chordLine += " ";
+            while (lyricLine.length < chordLine.length - chord.length) {
+              lyricLine += " ";
+            }
+          }
+          chordLine += chord;
+        } else if (match[2]) {
+          lyricLine += match[2];
+        }
+      }
+
+      if (chordLine.trim()) {
+        outputLines.push(chordLine);
+      }
+      if (lyricLine.trim()) {
+        outputLines.push(lyricLine);
+      }
+      continue;
+    }
+
+    outputLines.push(line);
+  }
+
+  return outputLines.join("\n");
 }
 
 /**
@@ -523,18 +724,22 @@ export async function extrairCifraClub(urlStr: string): Promise<{
     html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i) ||
     html.match(/<div[^>]*class=["'][^"']*cifra_cnt[^"']*["'][^>]*>([\s\S]*?)<\/div>/i);
 
-    if (preMatch) {
+  if (preMatch) {
     let preContent = preMatch[1];
-    // Converter divs e brs do Cifra Club em quebras de linha reais
+    // Converter divs, ps e brs do Cifra Club em quebras de linha reais
     preContent = preContent
-      .replace(/<div[^>]*>/gi, "")
+      .replace(/<br\s*\/?>/gi, "\n")
       .replace(/<\/div>/gi, "\n")
-      .replace(/<br\s*\/?>/gi, "\n");
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<div[^>]*>/gi, "")
+      .replace(/<p[^>]*>/gi, "");
     // Decodificar entidades e remover tags HTML preservando texto e quebras
     rawCifra = cleanHtmlEntities(preContent.replace(/<[^>]+>/g, ""));
-    // Limpar zero-width spaces e artefatos de formatação do Cifra Club novo
+    // Limpar zero-width spaces e artefatos de formatação do Cifra Club
     rawCifra = rawCifra.replace(/[\u200B-\u200D\uFEFF]/g, "");
     rawCifra = rawCifra.replace(/^[ \t]*Tom\s*=\s*[^\r\n]*[\r\n]*/gim, "");
+    rawCifra = descolarVersos(rawCifra);
+    rawCifra = rawCifra.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
     rawCifra = rawCifra.replace(/\n{3,}/g, "\n\n").trim();
   }
 
@@ -544,14 +749,12 @@ export async function extrairCifraClub(urlStr: string): Promise<{
     );
   }
 
-  const cifraNormalizada = normalizarCifra(rawCifra);
-
   return {
     title: title || "Música sem título",
     artist: artist || "Artista desconhecido",
     key: key || "C",
     tempo: 120,
-    cifra: cifraNormalizada,
+    cifra: rawCifra,
   };
 }
 

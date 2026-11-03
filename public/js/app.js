@@ -743,7 +743,7 @@ function inlineToTwoLines(line) {
   return { chordLine, lyricLine };
 }
 
-function formatChordLine(line, semitones) {
+function formatChordLineHtml(line) {
   const regex = /\S+/g;
   let match;
   let lastIdx = 0;
@@ -758,8 +758,7 @@ function formatChordLine(line, semitones) {
     }
 
     if (isChordToken(rawToken)) {
-      const trans = semitones !== 0 ? transposeChord(rawToken, semitones) : rawToken;
-      result += '<b class="cifra-chord">' + escapeHtml(trans) + '</b>';
+      result += '<span class="chord cifra-chord">' + escapeHtml(rawToken) + '</span>';
     } else {
       result += escapeHtml(rawToken);
     }
@@ -774,138 +773,95 @@ function formatChordLine(line, semitones) {
   return result;
 }
 
-function renderCifra() {
+function renderizarCifra(cifraParam) {
   const container = document.getElementById("cifraDisplay");
   if (!container) return;
 
-  const fs = appState.singerMode ? appState.singerFontSize : appState.fontSize;
+  const isSinger = !!appState.singerMode;
+  const fs = isSinger ? appState.singerFontSize : appState.fontSize;
   container.style.fontSize = (fs || 16) + "px";
 
-  if (!appState.currentSong) {
-    container.className = "cifra-sheet";
+  if (!appState.currentSong && !cifraParam) {
+    container.className = "cifra-display cifra-sheet";
     container.innerHTML =
       '<div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 15px;">Nenhuma música selecionada.<br>Escolha uma música no repertório ao lado para começar.</div>';
     return;
   }
 
-  let cifraText = appState.currentSong.cifra || "";
+  let rawText = typeof cifraParam === "string" ? cifraParam : (appState.currentSong?.cifra || "");
   const totalShift = (appState.transpose || 0) - (appState.capotraste || 0);
-  const isSinger = !!appState.singerMode;
 
-  // 1. Limpeza de caracteres invisíveis e padronização de quebras de linha
-  const cleanText = cifraText
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n");
+  // 1. Aplicar transposição de acordes se houver transposição ou capotraste
+  if (totalShift !== 0 && window.transpor) {
+    rawText = window.transpor(rawText, totalShift, appState.currentSong?.key);
+  }
 
-  const lines = cleanText.split("\n");
-  const processedLines = [];
+  // 2. Desempacotar ChordPro para 2 linhas alinhadas (estilo Cifra Club)
+  const twoLinesText = window.chordProToTwoLines ? window.chordProToTwoLines(rawText) : rawText;
 
-  // Primeiro passo: normalizar e desdobrar linhas
+  const lines = twoLinesText.split("\n");
+  const output = [];
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // Marcador de seção com acordes opcionais na mesma linha: ex: [Intro] C ou [Intro]
-    const sectionMatch = trimmed.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.*)$/);
-    if (sectionMatch) {
-      const secMarker = sectionMatch[1];
-      const rest = sectionMatch[2].trim();
-      if (!rest) {
-        processedLines.push({ type: "section", content: secMarker });
-      } else {
-        processedLines.push({ type: "section-with-chords", section: secMarker, chords: rest });
-      }
-      continue;
-    }
-
-    // Tablatura
-    if (/^\s*[eEaAdDgGbB1-6]\|/.test(line)) {
-      processedLines.push({ type: "tab", content: line });
-      continue;
-    }
-
     // Linha vazia
     if (!trimmed) {
-      processedLines.push({ type: "empty", content: "" });
-      continue;
-    }
-
-    // Linha com colchetes inline [C]Letra
-    if (/\[[A-G][#b]?[^\]]*\]/.test(line)) {
-      const cleanLine = line.replace(/\[\s*\]/g, "");
-      const withoutBrackets = cleanLine.replace(/\[[^\]]+\]/g, "");
-      if (!withoutBrackets.trim()) {
-        const chordOnly = cleanLine.replace(/\[([^\]]+)\]/g, "$1 ").replace(/\s+/g, " ").trim();
-        processedLines.push({ type: "chord", content: chordOnly });
-        continue;
-      }
-
-      const { chordLine, lyricLine } = inlineToTwoLines(cleanLine);
-      if (chordLine.trim()) {
-        processedLines.push({ type: "chord", content: chordLine });
-      }
-      if (lyricLine.trim()) {
-        processedLines.push({ type: "lyric", content: lyricLine });
-      }
-      continue;
-    }
-
-    // Linha tradicional: acorde sobre letra (estilo Cifra Club) ou letra pura
-    if (isChordLine(line)) {
-      processedLines.push({ type: "chord", content: line });
-    } else {
-      processedLines.push({ type: "lyric", content: line });
-    }
-  }
-
-  // Segundo passo: construir HTML linha por linha preservando alinhamento estrito
-  const output = [];
-
-  for (const item of processedLines) {
-    if (item.type === "empty") {
       output.push("");
       continue;
     }
 
-    if (item.type === "section") {
-      output.push('<span class="cifra-section">' + escapeHtml(item.content) + '</span>');
+    // Seção pura: [Intro], [Refrão], [Primeira Parte], etc.
+    if (/^\[([A-Za-zÀ-ÿ0-9\s\-_:]+)\]$/.test(trimmed)) {
+      output.push('<span class="section-marker cifra-section">' + escapeHtml(trimmed) + '</span>');
       continue;
     }
 
-    if (item.type === "section-with-chords") {
-      let secHtml = '<span class="cifra-section">' + escapeHtml(item.section) + '</span>';
-      if (!isSinger && item.chords) {
-        secHtml += " " + formatChordLine(item.chords, totalShift);
+    // Seção com acordes: ex: [Intro] C  G
+    const sectionMatch = trimmed.match(/^(\[[A-Za-zÀ-ÿ0-9\s\-_:]+\])\s*(.*)$/);
+    if (sectionMatch && !isChordToken(sectionMatch[1].replace(/[\[\]]/g, ""))) {
+      const secMarker = sectionMatch[1];
+      const rest = sectionMatch[2].trim();
+      let secHtml = '<span class="section-marker cifra-section">' + escapeHtml(secMarker) + '</span>';
+      if (!isSinger && rest) {
+        secHtml += " " + formatChordLineHtml(rest);
       }
       output.push(secHtml);
       continue;
     }
 
-    if (item.type === "tab") {
+    // Tablatura
+    if (isTablatureLine(line)) {
       if (!isSinger) {
-        output.push('<span class="cifra-tablature">' + escapeHtml(item.content) + '</span>');
+        output.push('<span class="cifra-tablature">' + escapeHtml(line) + '</span>');
       }
       continue;
     }
 
-    if (item.type === "chord") {
+    // Linha de acordes
+    if (isChordLine(line)) {
       if (!isSinger) {
-        output.push(formatChordLine(item.content, totalShift));
+        output.push(formatChordLineHtml(line));
       }
       continue;
     }
 
-    if (item.type === "lyric") {
-      output.push(escapeHtml(item.content));
-      continue;
-    }
+    // Linha de letra
+    output.push(escapeHtml(line));
   }
 
-  container.className = "cifra-sheet" + (isSinger ? " singer-mode" : "");
+  container.className = "cifra-display cifra-sheet" + (isSinger ? " singer-mode" : "");
   const fullHtml = output.join("\n");
-  container.innerHTML = isSinger ? fullHtml.replace(/\n{3,}/g, "\n\n") : fullHtml;
+  container.innerHTML = isSinger ? fullHtml.replace(/\n{3,}/g, "\n\n").trim() : fullHtml;
 }
+
+function renderCifra() {
+  return renderizarCifra();
+}
+
+window.renderizarCifra = renderizarCifra;
+window.renderCifra = renderCifra;
 
 // ═══════════════════════════ RENDERIZAR INTERFACE ═══════════════════════════
 function renderSongs() {
